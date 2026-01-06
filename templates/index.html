@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐳 Mini Docker Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="title">🐳 Mini Docker Dashboard</h1>
+            <div class="status-indicator">
+                <span id="wsl-status" class="status-badge">● Ready</span>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('create')">➕ Create Container</button>
+            <button class="tab-btn" onclick="switchTab('manage')">📦 Manage Containers</button>
+        </div>
+
+        <!-- Create Container Tab -->
+        <div id="create-tab" class="tab-content active">
+            <div class="form-container">
+                <h2>Container Configuration</h2>
+                <form id="container-form" onsubmit="createContainer(event)">
+                    <div class="form-group">
+                        <label for="container-name">Container Name *</label>
+                        <input type="text" id="container-name" name="name" required placeholder="my-container">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="container-command">Command *</label>
+                        <textarea id="container-command" name="command" rows="3" required placeholder="python -c &quot;print('Hello World')&quot;"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="mem-limit">Memory Limit (MB)</label>
+                            <input type="number" id="mem-limit" name="mem_limit" value="100" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="cpu-limit">CPU Limit (%)</label>
+                            <input type="number" id="cpu-limit" name="cpu_limit" value="50" min="1" max="100">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="button" class="btn btn-secondary" onclick="showAdvanced()">⚙️ Advanced Options</button>
+                        <div id="advanced-options" class="advanced-options" style="display: none;">
+                            <h3>Volume Mounts</h3>
+                            <div id="volumes-list"></div>
+                            <button type="button" class="btn btn-small" onclick="addVolume()">+ Add Volume</button>
+
+                            <h3>Environment Variables</h3>
+                            <div id="env-list"></div>
+                            <button type="button" class="btn btn-small" onclick="addEnvVar()">+ Add Variable</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Create Container</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Manage Containers Tab -->
+        <div id="manage-tab" class="tab-content">
+            <div class="manage-container">
+                <div class="toolbar">
+                    <h2>Container Management</h2>
+                    <button class="btn btn-info" onclick="refreshContainers()">🔄 Refresh</button>
+                </div>
+
+                <div class="table-container">
+                    <table id="containers-table" class="containers-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="select-all" onchange="toggleSelectAll()"></th>
+                                <th>📛 Name (ID)</th>
+                                <th>💻 Command</th>
+                                <th>📊 Status</th>
+                                <th>🔢 PID</th>
+                                <th>⏱️ Uptime</th>
+                                <th>📈 Resources</th>
+                                <th>📄 Latest Log</th>
+                                <th>🕒 Last Started</th>
+                                <th>⚡ CPU %</th>
+                                <th>⚙️ Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="containers-tbody">
+                            <tr>
+                                <td colspan="11" class="empty-state">No containers found. Create one to get started!</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="controls">
+                    <h3>Container Controls</h3>
+                    <div class="button-group">
+                        <button class="btn btn-success" onclick="bulkAction('start')" id="btn-start" disabled>▶️ Start</button>
+                        <button class="btn btn-danger" onclick="bulkAction('stop')" id="btn-stop" disabled>⏹️ Stop</button>
+                        <button class="btn btn-info" onclick="bulkAction('pause')" id="btn-pause" disabled>⏸️ Pause</button>
+                        <button class="btn btn-success" onclick="bulkAction('resume')" id="btn-resume" disabled>▶️ Resume</button>
+                        <button class="btn btn-info" onclick="bulkAction('restart')" id="btn-restart" disabled>🔄 Restart</button>
+                        <button class="btn btn-info" onclick="viewLogs()" id="btn-logs" disabled>📄 View Logs</button>
+                        <button class="btn btn-info" onclick="openRootfs()" id="btn-rootfs" disabled>📁 Open Rootfs</button>
+                        <button class="btn btn-danger" onclick="bulkAction('delete')" id="btn-delete" disabled>🗑️ Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Modal -->
+    <div id="logs-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="logs-title">📄 Container Logs</h3>
+                <span class="close" onclick="closeLogsModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <pre id="logs-content"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
+

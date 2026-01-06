@@ -1,0 +1,40 @@
+# Example Mini Docker Container Configuration
+# This file demonstrates all available configuration options
+
+name: webserver
+command: python -m http.server 8080
+image: python:3.9
+
+# Resource Limits
+mem_limit_mb: 200
+cpu_limit_percent: 50
+
+# Port Mappings (host_port:container_port)
+ports:
+  - "8080:8080"
+  - "8443:443"
+
+# Volume Mounts (host_path:container_path)
+volumes:
+  - "./data:/app/data"
+  - "./logs:/app/logs"
+
+# Environment Variables
+env_vars:
+  MODE: production
+  DEBUG: "false"
+  PORT: "8080"
+
+# Restart Policy: 'no', 'always', 'on-failure', 'unless-stopped'
+restart_policy: always
+
+# Health Check Configuration
+health_check:
+  cmd: "curl -f http://localhost:8080 || exit 1"
+  interval: 30  # seconds between checks
+  timeout: 10   # seconds before timeout
+  retries: 3    # consecutive failures before marking unhealthy
+
+# Network Mode: 'bridge', 'host'
+network: bridge
+

@@ -1,0 +1,27 @@
+{
+  "name": "database",
+  "command": "python -c \"import time; print('Database running...'); time.sleep(3600)\"",
+  "image": "python:3.9",
+  "mem_limit_mb": 150,
+  "cpu_limit_percent": 30,
+  "ports": [
+    "5432:5432"
+  ],
+  "volumes": [
+    "./db_data:/var/lib/postgresql/data"
+  ],
+  "env_vars": {
+    "DB_NAME": "mydb",
+    "DB_USER": "admin",
+    "DB_PASSWORD": "secret123"
+  },
+  "restart_policy": "on-failure",
+  "health_check": {
+    "cmd": "python -c \"import sys; sys.exit(0)\"",
+    "interval": 60,
+    "timeout": 5,
+    "retries": 3
+  },
+  "network": "bridge"
+}
+
