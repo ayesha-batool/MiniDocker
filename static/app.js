@@ -29,6 +29,16 @@ function setupSocketListeners() {
         updateButtonStates();
     });
 
+    socket.on('container_started', (data) => {
+        loadContainers();
+        if (data.status === 'success') {
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.message, 'error');
+        }
+        updateButtonStates();
+    });
+
     socket.on('status_update', (data) => {
         updateContainerStatus(data.name, data.status);
     });
@@ -141,7 +151,10 @@ async function containerAction(name, action) {
         const data = await response.json();
         if (response.ok) {
             loadContainers();
-            showNotification(`Container ${action}ed successfully`, 'success');
+            // For start action, wait for delayed notification from server
+            if (action !== 'start') {
+                showNotification(`Container ${action}ed successfully`, 'success');
+            }
         } else {
             showNotification(data.error || `Failed to ${action} container`, 'error');
         }
@@ -201,21 +214,35 @@ async function deleteContainer(name) {
 }
 
 // View logs
-async function viewLogs() {
-    const selected = Array.from(selectedContainers);
-    if (selected.length === 0) {
-        showNotification('Please select a container', 'warning');
+async function viewLogs(containerName = null) {
+    // If containerName is provided, use it directly; otherwise get from selection
+    let name = containerName;
+    if (!name) {
+        const selected = Array.from(selectedContainers);
+        if (selected.length === 0) {
+            showNotification('Please select a container', 'warning');
+            return;
+        }
+        name = selected[0];
+    }
+    
+    // Verify container exists in current containers list
+    const container = containers.find(c => c.name === name);
+    if (!container) {
+        showNotification(`Container '${name}' not found`, 'error');
         return;
     }
     
-    const name = selected[0];
     try {
-        const response = await fetch(`/api/containers/${name}/logs`);
+        // Use encodeURIComponent to handle special characters in container name
+        const response = await fetch(`/api/containers/${encodeURIComponent(name)}/logs`);
         const data = await response.json();
         if (response.ok) {
-            document.getElementById('logs-title').textContent = `📄 Logs: ${name}`;
-            document.getElementById('logs-content').textContent = data.logs;
+            document.getElementById('logs-title').textContent = `📄 Logs: ${name} (${container.id})`;
+            document.getElementById('logs-content').textContent = data.logs || 'No logs available';
             document.getElementById('logs-modal').style.display = 'block';
+        } else {
+            showNotification(data.error || 'Failed to load logs', 'error');
         }
     } catch (error) {
         showNotification('Error loading logs: ' + error.message, 'error');
@@ -287,9 +314,7 @@ function showContainerMenu(event, name) {
         <div class="menu-item" onclick="containerAction('${name}', 'restart'); this.closest('.context-menu').remove();">🔄 Restart</div>
         <div class="menu-divider"></div>
         <div class="menu-item" onclick="
-            selectedContainers.clear();
-            selectedContainers.add('${name}');
-            viewLogs();
+            viewLogs('${name}');
             this.closest('.context-menu').remove();
         ">📄 View Logs</div>
         <div class="menu-item" onclick="deleteContainer('${name}'); this.closest('.context-menu').remove();">🗑️ Delete</div>
@@ -315,49 +340,76 @@ function showAdvanced() {
 }
 
 function addVolume() {
-    let hostPath = '';
-    showPromptModal('Add Volume', 'Enter host path:', '/host/path', (host) => {
-        if (host) {
-            hostPath = host;
-            showPromptModal('Add Volume', 'Enter container path:', '/container/path', (container) => {
-                if (container) {
-                    const list = document.getElementById('volumes-list');
-                    const div = document.createElement('div');
-                    div.className = 'volume-item';
-                    div.innerHTML = `<span>${escapeHtml(hostPath)}:${escapeHtml(container)}</span> <button type="button" class="btn-small" onclick="this.parentElement.remove()">Remove</button>`;
-                    list.appendChild(div);
-                }
-            });
+    showDualInputModal(
+        'Add Volume Mount',
+        'Host Path:',
+        'C:/MyData',
+        'Container Path:',
+        '/app/data',
+        (hostPath, containerPath) => {
+            if (hostPath && containerPath) {
+                const list = document.getElementById('volumes-list');
+                const div = document.createElement('div');
+                div.className = 'volume-item';
+                div.innerHTML = `<span>${escapeHtml(hostPath)}:${escapeHtml(containerPath)}</span> <button type="button" class="btn-small" onclick="this.parentElement.remove()">Remove</button>`;
+                list.appendChild(div);
+            }
         }
-    });
+    );
 }
 
 function addEnvVar() {
-    let varName = '';
-    showPromptModal('Add Environment Variable', 'Enter variable name:', 'VAR_NAME', (key) => {
-        if (key) {
-            varName = key;
-            showPromptModal('Add Environment Variable', 'Enter variable value:', 'value', (value) => {
-                if (value !== null) {
-                    const list = document.getElementById('env-list');
-                    const div = document.createElement('div');
-                    div.className = 'env-item';
-                    div.innerHTML = `<span>${escapeHtml(varName)}=${escapeHtml(value)}</span> <button type="button" class="btn-small" onclick="this.parentElement.remove()">Remove</button>`;
-                    list.appendChild(div);
-                }
-            });
+    showDualInputModal(
+        'Add Environment Variable',
+        'Variable Name:',
+        'MODE',
+        'Variable Value:',
+        'production',
+        (varName, varValue) => {
+            if (varName && varValue !== null) {
+                const list = document.getElementById('env-list');
+                const div = document.createElement('div');
+                div.className = 'env-item';
+                div.innerHTML = `<span>${escapeHtml(varName)}=${escapeHtml(varValue)}</span> <button type="button" class="btn-small" onclick="this.parentElement.remove()">Remove</button>`;
+                list.appendChild(div);
+            }
         }
-    });
+    );
 }
 
 function getVolumes() {
     // Extract volumes from DOM
-    return [];
+    const volumes = [];
+    const volumeList = document.getElementById('volumes-list');
+    if (volumeList) {
+        const volumeItems = volumeList.querySelectorAll('.volume-item span');
+        volumeItems.forEach(item => {
+            const text = item.textContent.trim();
+            if (text) {
+                volumes.push(text);
+            }
+        });
+    }
+    return volumes;
 }
 
 function getEnvVars() {
     // Extract env vars from DOM
-    return {};
+    const envVars = {};
+    const envList = document.getElementById('env-list');
+    if (envList) {
+        const envItems = envList.querySelectorAll('.env-item span');
+        envItems.forEach(item => {
+            const text = item.textContent.trim();
+            const equalIndex = text.indexOf('=');
+            if (equalIndex > 0) {
+                const key = text.substring(0, equalIndex).trim();
+                const value = text.substring(equalIndex + 1).trim();
+                envVars[key] = value;
+            }
+        });
+    }
+    return envVars;
 }
 
 // Utility functions
@@ -448,6 +500,88 @@ function showConfirmModal(title, message, onConfirm, onCancel = null) {
             if (onCancel && typeof onCancel === 'function') onCancel();
         }
     };
+}
+
+// Dual input modal for two fields at once
+function showDualInputModal(title, label1, placeholder1, label2, placeholder2, onConfirm, onCancel = null) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    const modalId = 'dual-input-modal-' + Date.now();
+    modal.id = modalId;
+    
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>${escapeHtml(title)}</h3>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-dark);">${escapeHtml(label1)}</label>
+                    <input type="text" id="${modalId}-input1" class="form-input" placeholder="${escapeHtml(placeholder1)}" style="width: 100%;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-dark);">${escapeHtml(label2)}</label>
+                    <input type="text" id="${modalId}-input2" class="form-input" placeholder="${escapeHtml(placeholder2)}" style="width: 100%;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('${modalId}').remove()">Cancel</button>
+                <button class="btn btn-primary" id="${modalId}-submit">Add</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Set up submit handler
+    const submitBtn = document.getElementById(modalId + '-submit');
+    submitBtn.addEventListener('click', () => {
+        const input1 = document.getElementById(modalId + '-input1').value.trim();
+        const input2 = document.getElementById(modalId + '-input2').value.trim();
+        if (input1 && input2) {
+            modal.remove();
+            if (typeof onConfirm === 'function') {
+                onConfirm(input1, input2);
+            }
+        } else {
+            showNotification('Please fill in both fields', 'warning');
+        }
+    });
+    
+    // Focus on first input
+    setTimeout(() => {
+        const input1 = document.getElementById(modalId + '-input1');
+        if (input1) {
+            input1.focus();
+            // Allow Enter key to move to next field
+            input1.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById(modalId + '-input2').focus();
+                }
+            });
+        }
+        const input2 = document.getElementById(modalId + '-input2');
+        if (input2) {
+            // Allow Enter key to submit
+            input2.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitBtn.click();
+                }
+            });
+        }
+    }, 10);
+    
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+            if (onCancel && typeof onCancel === 'function') {
+                onCancel();
+            }
+        }
+    });
 }
 
 // Prompt modal system

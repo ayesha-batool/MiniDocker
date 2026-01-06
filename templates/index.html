@@ -3,24 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🐳 Mini Docker Dashboard</title>
+    <title>Mini Docker - Container Management Platform</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1 class="title">🐳 Mini Docker Dashboard</h1>
-            <div class="status-indicator">
-                <span id="wsl-status" class="status-badge">● Ready</span>
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-icon">🐳</div>
+                    <div>
+                        <h1 class="title">Mini Docker</h1>
+                        <p class="subtitle">Container Management Platform</p>
+                    </div>
+                </div>
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="wsl-status" class="status-text">System Ready</span>
+                </div>
             </div>
         </header>
 
         <!-- Tabs -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('create')">➕ Create Container</button>
-            <button class="tab-btn" onclick="switchTab('manage')">📦 Manage Containers</button>
+            <button class="tab-btn active" onclick="switchTab('create')">
+                <span class="tab-icon">➕</span>
+                <span>Create Container</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('manage')">
+                <span class="tab-icon">📦</span>
+                <span>Manage Containers</span>
+            </button>
         </div>
 
         <!-- Create Container Tab -->
@@ -71,8 +89,14 @@
         <div id="manage-tab" class="tab-content">
             <div class="manage-container">
                 <div class="toolbar">
-                    <h2>Container Management</h2>
-                    <button class="btn btn-info" onclick="refreshContainers()">🔄 Refresh</button>
+                    <div>
+                        <h2>Container Management</h2>
+                        <p class="toolbar-subtitle">Monitor and control your containers</p>
+                    </div>
+                    <button class="btn btn-info" onclick="refreshContainers()">
+                        <span>🔄</span>
+                        <span>Refresh</span>
+                    </button>
                 </div>
 
                 <div class="table-container">

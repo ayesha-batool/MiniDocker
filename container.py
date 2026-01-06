@@ -122,6 +122,7 @@ class SimulatedContainer:
             return ["unshare", "--pid", "--mount", "--uts", "--fork", "chroot", self.rootfs_path, "/bin/sh", "-c", self.command]
         else:
             # Windows simulation mode - no WSL, just run commands directly
+            # Rootfs is created but not used in simulation mode - no need to check for it
             # For Windows simulation mode, use shlex to properly parse quoted strings
             import shlex
             try:
@@ -152,7 +153,10 @@ class SimulatedContainer:
             env = os.environ.copy()
             if not self.is_linux:
                 # Windows simulation mode - add env vars directly
-                env.update(self.env_vars)
+                if self.env_vars:
+                    for key, value in self.env_vars.items():
+                        log_fd.write(f"Environment variable: {key} = {value}\n")
+                        env[str(key)] = str(value)  # Ensure both key and value are strings
             log_fd = open(self.log_file, 'a')
             log_fd.write(f"\n=== Container {self.container_id} started at {time.strftime('%Y-%m-%d %H:%M:%S')} ===\n")
             log_fd.write(f"Command: {self.command}\n")
@@ -164,11 +168,17 @@ class SimulatedContainer:
             # Use shell=True for Windows simulation mode to handle quotes properly
             use_shell = not self.is_linux
             if use_shell and isinstance(cmd_parts, str):
-                # Already a string, use as-is
+                # Already a string, use as-is with shell=True
+                # Environment variables are passed via env parameter
                 self.process = subprocess.Popen(cmd_parts, stdout=log_fd, stderr=subprocess.STDOUT,
                                               env=env, shell=True, text=True)
+            elif use_shell and isinstance(cmd_parts, list):
+                # For Windows with list, use shell=False to ensure env vars are passed correctly
+                # This works better than shell=True for environment variable inheritance
+                self.process = subprocess.Popen(cmd_parts, stdout=log_fd, stderr=subprocess.STDOUT,
+                                              env=env, shell=False, text=True)
             else:
-                # List of command parts
+                # List of command parts for Linux
                 self.process = subprocess.Popen(cmd_parts, stdout=log_fd, stderr=subprocess.STDOUT,
                                               env=env, shell=use_shell, text=True)
             if self.is_linux and self.cgroup_path:

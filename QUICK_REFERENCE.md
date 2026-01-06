@@ -65,9 +65,13 @@ DATABASE_URL=postgresql://localhost/mydb
 **Access in Python:**
 ```python
 import os
-mode = os.environ.get('MODE')
-port = int(os.environ.get('PORT', 8000))
+mode = os.environ.get('MODE')  # Note: 'MODE' must be in quotes!
+port = int(os.environ.get('PORT', 8000))  # 'PORT' must be in quotes!
 ```
+
+**⚠️ Always quote environment variable names:**
+- ✅ `os.environ.get('MODE')`
+- ❌ `os.environ.get(MODE)`  # NameError!
 
 ---
 
@@ -111,7 +115,7 @@ rootfs/
 
 ---
 
-## 🎯 Complete Example
+## 🎯 Complete Exampl
 
 **Container Name:** `my-app`
 

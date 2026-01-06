@@ -226,7 +226,7 @@ Mini Docker requires WSL for full features on Windows:
 3. **Verify Installation**:
    ```powershell
    wsl unshare --version
-   python test_wsl.py
+   # WSL support removed - using Windows simulation mode
    ```
 
 ---
@@ -572,7 +572,6 @@ Mini Docker/
 ├── config_loader.py        # YAML/JSON config loader
 ├── networking.py           # Networking support
 ├── utils.py               # Utility functions
-├── test_wsl.py            # WSL test script
 ├── requirements.txt       # Python dependencies
 ├── containers/            # Container rootfs directories
 │   └── <name>/

@@ -177,13 +177,42 @@ def start_container(name):
         return jsonify({"error": "Container not found"}), 404
     
     container = containers[name]
-    try:
-        container.run()
-        container.last_started = time.time()
-        socketio.emit('container_updated', {'name': name})
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    
+    # Start container in background and notify after it actually starts
+    def start_and_notify():
+        try:
+            container.run()
+            container.last_started = time.time()
+            
+            # Wait a moment to verify container actually started
+            time.sleep(0.8)
+            
+            # Check if container is running
+            if container.status == "Running" and container.process and container.process.poll() is None:
+                socketio.emit('container_started', {
+                    'name': name,
+                    'message': f'Container "{name}" started successfully!',
+                    'status': 'success'
+                })
+            else:
+                socketio.emit('container_started', {
+                    'name': name,
+                    'message': f'Container "{name}" failed to start',
+                    'status': 'error'
+                })
+            
+            socketio.emit('container_updated', {'name': name})
+        except Exception as e:
+            socketio.emit('container_started', {
+                'name': name,
+                'message': f'Error starting container: {str(e)}',
+                'status': 'error'
+            })
+    
+    # Start in background thread
+    threading.Thread(target=start_and_notify, daemon=True).start()
+    
+    return jsonify({"success": True, "message": "Starting container..."})
 
 @app.route('/api/containers/<name>/stop', methods=['POST'])
 def stop_container(name):
@@ -249,13 +278,22 @@ def delete_container(name):
 @app.route('/api/containers/<name>/logs', methods=['GET'])
 def get_logs(name):
     """Get container logs"""
+    # Decode URL-encoded container name
+    from urllib.parse import unquote
+    name = unquote(name)
+    
     if name not in containers:
-        return jsonify({"error": "Container not found"}), 404
+        return jsonify({"error": f"Container '{name}' not found"}), 404
     
     container = containers[name]
     tail = int(request.args.get('tail', 500))
+    
+    # Verify log file exists and belongs to this container
+    if not os.path.exists(container.log_file):
+        return jsonify({"logs": "No logs available yet"}), 200
+    
     logs = container.get_logs(tail=tail)
-    return jsonify({"logs": logs})
+    return jsonify({"logs": logs, "container_name": name, "log_file": container.log_file})
 
 @app.route('/api/containers/<name>/rootfs', methods=['POST'])
 def open_rootfs(name):

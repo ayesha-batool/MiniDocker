@@ -210,10 +210,14 @@ Variable Value: production
 **In your Python code:**
 ```python
 import os
-mode = os.environ.get('MODE', 'development')
+mode = os.environ.get('MODE', 'development')  # Note: 'MODE' must be in quotes!
 if mode == 'production':
     print('Running in production mode')
 ```
+
+**⚠️ Important:** Always use quotes around the environment variable name:
+- ✅ Correct: `os.environ.get('MODE')`
+- ❌ Wrong: `os.environ.get(MODE)`  # This will cause NameError!
 
 #### Example 3: API Key
 ```
@@ -289,8 +293,12 @@ print(f'Debug: {debug}')
 
 2. **Access in your command:**
    ```
-   python -c "import os; print(f'Mode: {os.environ.get(\"MODE\")}')"
+   python -c "import os; print(f'Mode: {os.environ.get(\"MODE\", \"not set\")}')"
    ```
+   
+   **⚠️ Important:** Always use quotes around environment variable names:
+   - ✅ Correct: `os.environ.get("MODE")` 
+   - ❌ Wrong: `os.environ.get(MODE)`  # Causes NameError!
 
 ---
 
@@ -303,6 +311,45 @@ print(f'Debug: {debug}')
 **Memory Limit** controls how much RAM (memory) your container can use. It prevents a container from using all available memory on your system.
 
 **Units:** Megabytes (MB)
+
+#### Available System Resources
+
+To determine appropriate memory limits, you need to know your system's available resources:
+
+**How to Check Available Memory:**
+
+1. **Windows (PowerShell):**
+   ```powershell
+   # Check total RAM
+   (Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB
+   
+   # Check available RAM
+   (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB
+   ```
+
+2. **Windows (Command Prompt):**
+   ```cmd
+   systeminfo | findstr /C:"Total Physical Memory"
+   ```
+
+3. **Linux/Mac:**
+   ```bash
+   # Check total and available memory
+   free -h
+   # or
+   cat /proc/meminfo | grep MemAvailable
+   ```
+
+**Typical System Memory:**
+- **4 GB RAM**: Limit containers to 100-500 MB each
+- **8 GB RAM**: Limit containers to 200-1000 MB each
+- **16 GB RAM**: Limit containers to 500-2000 MB each
+- **32 GB+ RAM**: Limit containers to 1000-4000 MB each
+
+**Recommendation:** 
+- Reserve at least 2-4 GB for your operating system
+- Don't allocate more than 70% of total RAM to all containers combined
+- Example: On 8 GB system, allocate max 5-6 GB total across all containers
 
 #### Why Use Memory Limits?
 
@@ -355,6 +402,55 @@ Memory Limit: 1024 MB
 
 **Units:** Percentage (%)
 
+#### Available CPU Resources
+
+To determine appropriate CPU limits, you need to know your system's CPU capabilities:
+
+**How to Check Available CPU:**
+
+1. **Windows (PowerShell):**
+   ```powershell
+   # Check number of CPU cores
+   (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+   
+   # Check CPU usage
+   Get-Counter '\Processor(_Total)\% Processor Time'
+   ```
+
+2. **Windows (Task Manager):**
+   - Press `Ctrl + Shift + Esc`
+   - Go to "Performance" tab
+   - See "Logical processors" count
+
+3. **Linux/Mac:**
+   ```bash
+   # Check number of CPU cores
+   nproc
+   # or
+   lscpu | grep "^CPU(s):"
+   
+   # Check CPU usage
+   top
+   # or
+   htop
+   ```
+
+**Understanding CPU Limits:**
+- **100% CPU Limit** = Full use of 1 CPU core
+- **50% CPU Limit** = Half of 1 CPU core
+- **200% CPU Limit** = Full use of 2 CPU cores (if available)
+
+**Typical CPU Configurations:**
+- **2 Cores**: Limit containers to 25-100% each
+- **4 Cores**: Limit containers to 25-200% each
+- **6 Cores**: Limit containers to 25-300% each
+- **8+ Cores**: Limit containers to 25-400% each
+
+**Recommendation:**
+- Reserve at least 1-2 cores for your operating system
+- Don't allocate more than 80% of total CPU capacity to all containers
+- Example: On 4-core system, allocate max 3 cores (300%) total across all containers
+
 #### Why Use CPU Limits?
 
 1. **Fair CPU Sharing**: Multiple containers share CPU fairly
@@ -393,6 +489,40 @@ CPU Limit: 100%
 - **50% CPU Limit** means the container can use up to half of one CPU core
 - If you have 4 CPU cores, 50% = 2 cores maximum
 - CPU is shared fairly among all running containers
+- CPU limits are "soft" limits - containers can briefly exceed them during spikes
+
+#### Resource Monitoring in Mini Docker
+
+Mini Docker displays real-time resource usage for all containers:
+
+**Available Resource Information:**
+- **Memory Usage**: Shows current RAM usage vs. limit (e.g., "45 MB / 100 MB")
+- **CPU Usage**: Shows current CPU percentage (e.g., "12.5%")
+- **Uptime**: Shows how long the container has been running (e.g., "2m 30s")
+- **PID**: Process ID for system monitoring
+- **Status**: Current container state (Running, Stopped, Paused, etc.)
+- **Last Started**: Timestamp of when container was last started
+
+**Where to View Resources:**
+1. **Container Table**: Check the "Resources" column for memory/CPU limits
+2. **CPU % Column**: Monitor real-time CPU usage percentage
+3. **Uptime Column**: See how long containers have been running
+4. **Container Logs**: View detailed resource information in logs
+
+**Example Resource Display in UI:**
+```
+Resources: 100MB/50%    (Memory Limit: 100MB, CPU Limit: 50%)
+CPU %: 12.5%            (Current CPU usage)
+Uptime: 2m 30s          (Running for 2 minutes 30 seconds)
+PID: 12345              (Process ID)
+Status: Running          (Current state)
+```
+
+**Monitoring Tips:**
+- Monitor CPU % to see if containers are hitting their limits
+- Check memory usage to ensure containers aren't running out of RAM
+- Use uptime to track container stability
+- View logs for detailed resource consumption patterns
 
 #### What Happens if Limit is Exceeded?
 
@@ -547,8 +677,12 @@ Virtual filesystem showing system information.
 
 **Command:**
 ```
-python -c "import os, time; print(f'Mode: {os.environ.get(\"MODE\")}'); time.sleep(10)"
+python -c "import os, time; print(f'Mode: {os.environ.get(\"MODE\", \"not set\")}'); time.sleep(10)"
 ```
+
+**⚠️ Important:** Always use quotes around environment variable names:
+- ✅ Correct: `os.environ.get("MODE")` or `os.environ.get('MODE')`
+- ❌ Wrong: `os.environ.get(MODE)`  # This causes NameError!
 
 **Memory Limit:** `100 MB`
 
