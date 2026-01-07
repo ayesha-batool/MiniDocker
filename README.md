@@ -678,6 +678,27 @@ This project demonstrates:
 
 ---
 
+## 📚 OS Lab Documentation
+
+For **OS Lab instructors and students**, comprehensive documentation is available:
+
+- **[IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md)** - Detailed roadmap for implementing OS concepts (namespaces, cgroups, networking, security)
+- **[GRADING_CHECKLIST.md](GRADING_CHECKLIST.md)** - Grading rubric and checklist based on OS lab requirements
+- **[FEATURE_TRACKER.md](FEATURE_TRACKER.md)** - Quick reference tracker for feature implementation status
+
+### Key OS Concepts Covered
+
+- ✅ **Namespaces**: PID, Mount, UTS (partial: Network, User, IPC)
+- ✅ **cgroups**: Memory and CPU limiting (v1, v2 support planned)
+- ✅ **Process Management**: Lifecycle, restart policies, health checks
+- ⚠️ **Networking**: Basic implementation (full isolation planned)
+- ❌ **Security**: Seccomp filters, capabilities (planned)
+- ❌ **Advanced Features**: OverlayFS, exec, checkpoint/restore (planned)
+
+See the roadmap documents for detailed implementation plans and grading criteria.
+
+---
+
 ## ⚠️ Limitations
 
 - **Security**: This is an educational project, not production-ready
