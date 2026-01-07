@@ -1,6 +1,8 @@
 import os
 import shutil
 import tarfile
+import subprocess
+import platform
 
 class FileSystemManager:
     def __init__(self, base_dir="./containers", images_dir="./images"):
@@ -8,14 +10,21 @@ class FileSystemManager:
         self.images_dir = images_dir
         os.makedirs(self.base_dir, exist_ok=True)
         os.makedirs(self.images_dir, exist_ok=True)
+        self.is_linux = platform.system() == "Linux"
 
-    def create_rootfs(self, name, image_name=None):
+    def create_rootfs(self, name, image_name=None, use_overlay=False):
         """
         Create a rootfs folder for the container.
         If image_name is provided, copy from that image.
         Otherwise, create a minimal rootfs structure.
+        If use_overlay is True, create OverlayFS structure.
         """
-        rootfs_path = os.path.join(self.base_dir, name, "rootfs")
+        container_dir = os.path.join(self.base_dir, name)
+        rootfs_path = os.path.join(container_dir, "rootfs")
+        
+        if use_overlay and self.is_linux and image_name:
+            # Create OverlayFS structure
+            return self._create_overlay_rootfs(name, image_name, container_dir)
         
         if image_name:
             # Create container from image
@@ -45,6 +54,81 @@ class FileSystemManager:
         
         return rootfs_path
     
+    def _create_overlay_rootfs(self, name, image_name, container_dir):
+        """
+        Create OverlayFS structure:
+        - lowerdir: base image (read-only)
+        - upperdir: container writable layer
+        - workdir: OverlayFS work directory
+        - merged: final mount point
+        """
+        if not self.is_linux:
+            # Fallback to regular rootfs on non-Linux
+            return self.create_rootfs(name, image_name, use_overlay=False)
+        
+        try:
+            # Get image path
+            image_path = os.path.join(self.images_dir, image_name)
+            if not os.path.exists(image_path):
+                # Fallback if image doesn't exist
+                return self.create_rootfs(name, image_name, use_overlay=False)
+            
+            # Create overlay directories
+            lowerdir = os.path.join(container_dir, "lower")
+            upperdir = os.path.join(container_dir, "upper")
+            workdir = os.path.join(container_dir, "work")
+            merged = os.path.join(container_dir, "rootfs")
+            
+            # Create directories
+            os.makedirs(lowerdir, exist_ok=True)
+            os.makedirs(upperdir, exist_ok=True)
+            os.makedirs(workdir, exist_ok=True)
+            os.makedirs(merged, exist_ok=True)
+            
+            # Copy image to lowerdir (read-only base)
+            if os.path.isdir(image_path):
+                if os.path.exists(lowerdir):
+                    shutil.rmtree(lowerdir)
+                shutil.copytree(image_path, lowerdir)
+            elif image_path.endswith('.tar') or image_path.endswith('.tar.gz'):
+                with tarfile.open(image_path, 'r:*') as tar:
+                    tar.extractall(lowerdir)
+            
+            # Mount OverlayFS
+            mount_cmd = [
+                "mount", "-t", "overlay", "overlay",
+                "-o", f"lowerdir={lowerdir},upperdir={upperdir},workdir={workdir}",
+                merged
+            ]
+            result = subprocess.run(mount_cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                print(f"[OverlayFS] Created overlay filesystem for {name}")
+                return merged
+            else:
+                print(f"[OverlayFS] Failed to mount overlay: {result.stderr}")
+                # Fallback to regular rootfs
+                return self.create_rootfs(name, image_name, use_overlay=False)
+        except Exception as e:
+            print(f"[OverlayFS] Error creating overlay: {e}")
+            # Fallback to regular rootfs
+            return self.create_rootfs(name, image_name, use_overlay=False)
+    
+    def cleanup_overlay(self, name):
+        """Unmount and cleanup OverlayFS for container"""
+        if not self.is_linux:
+            return
+        
+        try:
+            container_dir = os.path.join(self.base_dir, name)
+            merged = os.path.join(container_dir, "rootfs")
+            
+            if os.path.ismount(merged):
+                subprocess.run(["umount", merged], capture_output=True)
+                print(f"[OverlayFS] Unmounted overlay for {name}")
+        except Exception as e:
+            print(f"[OverlayFS] Error cleaning up overlay: {e}")
+    
     def _create_minimal_rootfs(self, rootfs_path):
         """Create a minimal rootfs directory structure."""
         for folder in ["bin", "etc", "usr", "lib", "lib64", "tmp", "var", "proc", "sys"]:
@@ -61,6 +145,9 @@ class FileSystemManager:
         """Delete a container's rootfs folder."""
         path = os.path.join(self.base_dir, name)
         if os.path.exists(path):
+            # Cleanup OverlayFS if it exists
+            if self.is_linux:
+                self.cleanup_overlay(name)
             shutil.rmtree(path)
 
     def open_rootfs(self, name):

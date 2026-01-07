@@ -61,3 +61,51 @@ def parse_env_var(env_str):
         return (key.strip(), value.strip())
     return (env_str.strip(), "")
 
+def detect_cgroup_version():
+    """
+    Detect cgroup version (v1 or v2).
+    Returns 'v2' if unified hierarchy exists, 'v1' otherwise.
+    """
+    if platform.system() != "Linux":
+        return None
+    
+    # Check for cgroup v2 (unified hierarchy)
+    if os.path.exists("/sys/fs/cgroup/cgroup.controllers"):
+        return "v2"
+    
+    # Check for cgroup v1 (separate hierarchies)
+    if os.path.exists("/sys/fs/cgroup/memory") or os.path.exists("/sys/fs/cgroup/cpu"):
+        return "v1"
+    
+    return None
+
+def get_unprivileged_uid():
+    """Get an unprivileged UID for user namespace mapping"""
+    if platform.system() != "Linux":
+        return None
+    
+    try:
+        # Try to get current UID
+        uid = os.getuid()
+        if uid != 0:
+            return uid
+        # If root, use a high UID (typically safe)
+        return 1000
+    except:
+        return 1000
+
+def get_unprivileged_gid():
+    """Get an unprivileged GID for user namespace mapping"""
+    if platform.system() != "Linux":
+        return None
+    
+    try:
+        # Try to get current GID
+        gid = os.getgid()
+        if gid != 0:
+            return gid
+        # If root, use a high GID (typically safe)
+        return 1000
+    except:
+        return 1000
+
