@@ -296,7 +296,7 @@ Resource limits control how much of your computer's resources (memory and CPU) e
 - The container status will show "Stopped"
 
 #### CPU Limit
-i
+
 **What it does:**
 - Controls how much processing power (CPU) the container can use
 - Expressed as a percentage
