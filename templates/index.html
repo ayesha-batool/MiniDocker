@@ -16,7 +16,7 @@
         <header class="header">
             <div class="header-content">
                 <div class="logo-section">
-                    <div class="logo-icon">🐳</div>
+                    <div class="logo-icon">MD</div>
                     <div>
                         <h1 class="title">Mini Docker</h1>
                         <p class="subtitle">Container Management Platform</p>
@@ -32,11 +32,9 @@
         <!-- Tabs -->
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('create')">
-                <span class="tab-icon">➕</span>
                 <span>Create Container</span>
             </button>
             <button class="tab-btn" onclick="switchTab('manage')">
-                <span class="tab-icon">📦</span>
                 <span>Manage Containers</span>
             </button>
         </div>
@@ -46,6 +44,16 @@
             <div class="form-container">
                 <h2>Container Configuration</h2>
                 <form id="container-form" onsubmit="createContainer(event)">
+                    <div class="form-group">
+                        <label for="template-select">Use Template (Optional)</label>
+                        <select id="template-select" onchange="loadTemplate()" style="width: 100%; padding: 8px; margin-bottom: 12px;">
+                            <option value="">-- Select a template --</option>
+                            <option value="python-webserver">Python Web Server</option>
+                            <option value="data-processor">Data Processor</option>
+                            <option value="file-watcher">File Watcher</option>
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label for="container-name">Container Name *</label>
                         <input type="text" id="container-name" name="name" required placeholder="my-container">
@@ -68,7 +76,7 @@
                     </div>
 
                     <div class="form-group">
-                        <button type="button" class="btn btn-secondary" onclick="showAdvanced()">⚙️ Advanced Options</button>
+                        <button type="button" class="btn btn-secondary" onclick="showAdvanced()">Advanced Options</button>
                         <div id="advanced-options" class="advanced-options" style="display: none;">
                             <h3>Volume Mounts</h3>
                             <div id="volumes-list"></div>
@@ -93,8 +101,7 @@
                         <h2>Container Management</h2>
                         <p class="toolbar-subtitle">Monitor and control your containers</p>
                     </div>
-                    <button class="btn btn-info" onclick="refreshContainers()">
-                        <span>🔄</span>
+                        <button class="btn btn-info" onclick="refreshContainers()">
                         <span>Refresh</span>
                     </button>
                 </div>
@@ -104,16 +111,16 @@
                         <thead>
                             <tr>
                                 <th><input type="checkbox" id="select-all" onchange="toggleSelectAll()"></th>
-                                <th>📛 Name (ID)</th>
-                                <th>💻 Command</th>
-                                <th>📊 Status</th>
-                                <th>🔢 PID</th>
-                                <th>⏱️ Uptime</th>
-                                <th>📈 Resources</th>
-                                <th>📄 Latest Log</th>
-                                <th>🕒 Last Started</th>
-                                <th>⚡ CPU %</th>
-                                <th>⚙️ Actions</th>
+                                <th>Name (ID)</th>
+                                <th>Command</th>
+                                <th>Status</th>
+                                <th>PID</th>
+                                <th>Uptime</th>
+                                <th>Resources</th>
+                                <th>Latest Log</th>
+                                <th>Last Started</th>
+                                <th>CPU %</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="containers-tbody">
@@ -127,14 +134,14 @@
                 <div class="controls">
                     <h3>Container Controls</h3>
                     <div class="button-group">
-                        <button class="btn btn-success" onclick="bulkAction('start')" id="btn-start" disabled>▶️ Start</button>
-                        <button class="btn btn-danger" onclick="bulkAction('stop')" id="btn-stop" disabled>⏹️ Stop</button>
-                        <button class="btn btn-info" onclick="bulkAction('pause')" id="btn-pause" disabled>⏸️ Pause</button>
-                        <button class="btn btn-success" onclick="bulkAction('resume')" id="btn-resume" disabled>▶️ Resume</button>
-                        <button class="btn btn-info" onclick="bulkAction('restart')" id="btn-restart" disabled>🔄 Restart</button>
-                        <button class="btn btn-info" onclick="viewLogs()" id="btn-logs" disabled>📄 View Logs</button>
-                        <button class="btn btn-info" onclick="openRootfs()" id="btn-rootfs" disabled>📁 Open Rootfs</button>
-                        <button class="btn btn-danger" onclick="bulkAction('delete')" id="btn-delete" disabled>🗑️ Delete</button>
+                        <button class="btn btn-success" onclick="bulkAction('start')" id="btn-start" disabled>Start</button>
+                        <button class="btn btn-danger" onclick="bulkAction('stop')" id="btn-stop" disabled>Stop</button>
+                        <button class="btn btn-info" onclick="bulkAction('pause')" id="btn-pause" disabled>Pause</button>
+                        <button class="btn btn-success" onclick="bulkAction('resume')" id="btn-resume" disabled>Resume</button>
+                        <button class="btn btn-info" onclick="bulkAction('restart')" id="btn-restart" disabled>Restart</button>
+                        <button class="btn btn-info" onclick="viewLogs()" id="btn-logs" disabled>View Logs</button>
+                        <button class="btn btn-info" onclick="openRootfs()" id="btn-rootfs" disabled>Open Rootfs</button>
+                        <button class="btn btn-danger" onclick="bulkAction('delete')" id="btn-delete" disabled>Delete</button>
                     </div>
                 </div>
             </div>
@@ -145,7 +152,7 @@
     <div id="logs-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="logs-title">📄 Container Logs</h3>
+                        <h3 id="logs-title">Container Logs</h3>
                 <span class="close" onclick="closeLogsModal()">&times;</span>
             </div>
             <div class="modal-body">

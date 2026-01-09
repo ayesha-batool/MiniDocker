@@ -109,6 +109,9 @@ python -m http.server 8000
 - **Resume**: Resume a paused container
 - **Restart**: Restart a container
 - **View Logs**: See what the container printed
+- **View Stats**: See detailed container statistics and resource usage
+- **Export**: Export container configuration to reuse later
+- **Exec**: Execute commands inside a running container (Linux only)
 - **Delete**: Delete a container (removes all its data)
 
 ---
@@ -337,6 +340,136 @@ Resource limits control how much of your computer's resources (memory and CPU) e
 - Don't set limits higher than your computer has
 - Don't allocate all resources to one container
 - Don't forget that your OS needs resources too
+
+---
+
+## Understanding Rootfs (Root File System)
+
+### What is Rootfs?
+
+**Rootfs** (Root File System) is the container's isolated file system. Think of it as a **separate hard drive** that belongs only to your container.
+
+### Simple Explanation:
+
+Imagine your computer has folders like `C:\`, `D:\`, etc. A container has its own root folder called `/` (rootfs). They are completely separate!
+
+**Real-world analogy:**
+- Your computer = Your house with your rooms
+- Container rootfs = A separate apartment with its own rooms
+- They don't share anything unless you explicitly connect them (via volume mounts)
+
+### Where is Rootfs Located?
+
+When you create a container named "my-container", Mini Docker creates:
+```
+containers/
+└── my-container/
+    └── rootfs/
+        ├── bin/          # Executable programs
+        ├── etc/          # Configuration files
+        ├── usr/          # User programs
+        ├── lib/          # Libraries
+        ├── tmp/          # Temporary files
+        ├── var/          # Variable data
+        └── ...           # Other system directories
+```
+
+### What's Inside Rootfs?
+
+**bin/**: Basic executable programs (like `sh`, `ls`, `cat`)
+- These are the commands your container can run
+
+**etc/**: Configuration files
+- System settings and configuration
+- User accounts information
+
+**usr/**: Additional programs and libraries
+- Extra software and tools
+
+**lib/**: Shared libraries
+- Code libraries that programs need to run
+
+**tmp/**: Temporary files
+- Files that are created temporarily
+- Usually cleared when container stops
+
+**var/**: Variable data
+- Data that changes during container operation
+- Logs and other changing information
+
+### How Rootfs Works:
+
+1. **Isolation**: 
+   - Files you create in rootfs are isolated from your computer
+   - Your computer can't see files in rootfs (unless you use volume mounts)
+   - Container can't see files on your computer (unless you use volume mounts)
+
+2. **Persistence**:
+   - Files in rootfs persist while container exists
+   - When you delete container, rootfs is deleted too
+   - This is why volume mounts are important for important data!
+
+3. **Clean Environment**:
+   - Each container starts with a fresh rootfs
+   - No leftover files from previous runs
+   - Predictable and reproducible
+
+### Rootfs vs Volume Mounts:
+
+| Feature | Rootfs | Volume Mount |
+|---------|--------|--------------|
+| **Location** | Inside container only | Shared with your computer |
+| **Persistence** | Deleted when container deleted | Stays on your computer |
+| **Access** | Container only | Both container and your computer |
+| **Purpose** | Isolation | Data sharing |
+| **When to use** | Temporary files, container-specific data | Important data, files you want to keep |
+
+### Example: Understanding Rootfs
+
+**Scenario:** You create a container named "test"
+
+1. **Rootfs Created:**
+   ```
+   containers/test/rootfs/
+   ```
+
+2. **Your Command:**
+   ```
+   python -c "with open('/data.txt', 'w') as f: f.write('Hello')"
+   ```
+
+3. **File Created:**
+   ```
+   containers/test/rootfs/data.txt
+   ```
+
+4. **On Your Computer:**
+   - You CANNOT see this file in `C:\`
+   - It only exists in the container's rootfs
+   - If you delete the container, this file is deleted too
+
+5. **With Volume Mount:**
+   - Volume: `C:\MyData:/data`
+   - Command: `python -c "with open('/data/data.txt', 'w') as f: f.write('Hello')"`
+   - File created: `C:\MyData\data.txt` (on your computer!)
+   - Also accessible in container as `/data/data.txt`
+   - Persists even if container is deleted
+
+### Important Points:
+
+- **Rootfs is isolated**: Container files stay in rootfs, not on your computer
+- **Use volume mounts for important data**: Rootfs is deleted when container is deleted
+- **Each container has its own rootfs**: Containers don't share rootfs
+- **Rootfs is temporary**: Designed for container-specific files, not permanent storage
+
+### Viewing Rootfs:
+
+You can view your container's rootfs by:
+1. Going to the `containers/` folder in the project directory
+2. Opening the folder with your container's name
+3. Looking inside the `rootfs/` folder
+
+**Note:** On Windows, you can use the "Open Rootfs" button in the dashboard to open the folder in File Explorer.
 
 ---
 
@@ -867,6 +1000,12 @@ Think of a container like a **small, isolated room** for your program:
 - Like a diary of what happened
 - Shows errors and normal output
 
+**Rootfs:**
+- The container's isolated filesystem
+- Like a separate hard drive for your container
+- Each container has its own rootfs directory
+- Files created in rootfs stay isolated from your computer
+
 ---
 
 ## Glossary
@@ -887,7 +1026,7 @@ Think of a container like a **small, isolated room** for your program:
 
 **Volume Mount:** A way to share folders between your computer and container
 
-**Rootfs:** The container's isolated filesystem (root file system)
+**Rootfs:** The container's isolated filesystem (root file system) - see detailed explanation below
 
 **Status:** Current state of a container (Running, Stopped, Paused, etc.)
 
@@ -977,12 +1116,110 @@ Better to start low and increase:
 
 ---
 
+## Advanced Features
+
+### Container Statistics
+
+View detailed information about your containers:
+- **Resource Usage**: Current memory and CPU usage
+- **Uptime**: How long the container has been running
+- **Restart Count**: How many times it has restarted
+- **Health Status**: Current health check status
+- **Configuration**: All settings (limits, volumes, env vars, etc.)
+
+**How to view:**
+- Click on a container in the dashboard
+- Use the context menu (right-click) and select "View Stats"
+- Or use the API: `GET /api/containers/<name>/stats`
+
+### Container Export and Import
+
+**Export Container:**
+- Save container configuration to reuse later
+- Exports: name, command, limits, volumes, environment variables
+- Useful for backing up configurations or sharing with others
+
+**Import Container:**
+- Create a new container from exported configuration
+- Use the API: `POST /api/containers/import` with the exported JSON
+- Great for recreating containers with the same settings
+
+**Example Export:**
+```json
+{
+  "name": "my-web-server",
+  "command": "python -m http.server 8000",
+  "mem_limit_mb": 100,
+  "cpu_limit_percent": 50,
+  "volumes": ["C:\\Data:/app/data"],
+  "env_vars": {"PORT": "8000"},
+  "exported_at": "2026-01-06 12:00:00"
+}
+```
+
+### Container Templates
+
+**What are Templates?**
+- Saved container configurations you can reuse
+- Quick way to create containers with common settings
+- Pre-defined templates for common use cases
+
+**Built-in Templates:**
+1. **Python Web Server** - Simple HTTP server
+2. **Data Processor** - Example data processing script
+3. **File Watcher** - Simple file watching example
+
+**Save Your Own Templates:**
+- Create a container with your preferred settings
+- Export the container configuration
+- Save it as a template for future use
+
+**Use Templates:**
+- When creating a container, select a template
+- Template fills in the configuration automatically
+- You can still modify settings before creating
+
+### Container Exec (Execute Commands)
+
+**What is Exec?**
+- Run commands inside a running container
+- Like opening a terminal inside the container
+- Useful for debugging and inspection
+
+**How to Use:**
+- Container must be running
+- Use the API: `POST /api/containers/<name>/exec` with command
+- Returns the command output
+
+**Example:**
+```bash
+# Execute a command in running container
+POST /api/containers/my-container/exec
+Body: {"command": "ls -la /app"}
+```
+
+**Note:** Exec is only supported on Linux systems. On Windows, containers run in simulation mode.
+
+### Container Networking Information
+
+View networking details for containers:
+- **IP Address**: Container's network IP (if assigned)
+- **Port Mappings**: Which ports are mapped
+- **Network Mode**: Bridge, host, or none
+
+**How to view:**
+- Check container stats for networking information
+- Network details shown in the statistics view
+
+---
+
 ## Important Notes
 
 - **This is for learning only** - Don't use Mini Docker for real projects
 - **Containers are isolated** - Files created inside containers stay in containers
 - **Use volume mounts** - If you want to share files, use volume mounts
 - **Check resource limits** - Make sure you don't set limits too high for your computer
+- **Exec requires Linux** - Container exec feature only works on Linux systems
 
 ---
 

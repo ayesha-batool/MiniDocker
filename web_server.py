@@ -321,6 +321,234 @@ def open_rootfs(name):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/containers/<name>/stats', methods=['GET'])
+def get_container_stats(name):
+    """Get detailed container statistics"""
+    from urllib.parse import unquote
+    name = unquote(name)
+    
+    if name not in containers:
+        return jsonify({"error": "Container not found"}), 404
+    
+    container = containers[name]
+    stats = {
+        "name": container.name,
+        "id": container.container_id,
+        "status": container.status,
+        "command": container.command,
+        "created_at": None,
+        "started_at": None,
+        "uptime": "0s",
+        "restart_count": container.restart_count,
+        "health_status": getattr(container, 'health_status', 'unknown'),
+        "resources": {
+            "memory_limit_mb": container.mem_limit_mb,
+            "cpu_limit_percent": container.cpu_limit_percent,
+            "memory_usage_mb": 0,
+            "cpu_usage_percent": 0
+        },
+        "volumes": container.volumes,
+        "env_vars": container.env_vars,
+        "ports": container.ports,
+        "restart_policy": container.restart_policy
+    }
+    
+    # Get metadata
+    meta = manager.get_container_by_name(name)
+    if meta:
+        stats["created_at"] = meta.get("created_at")
+        stats["started_at"] = meta.get("started_at")
+    
+    # Get current resource usage
+    if container.process and container.process.poll() is None:
+        try:
+            import psutil
+            proc = psutil.Process(container.process.pid)
+            stats["resources"]["memory_usage_mb"] = round(proc.memory_info().rss / (1024*1024), 2)
+            stats["resources"]["cpu_usage_percent"] = round(proc.cpu_percent(interval=0.1), 2)
+            
+            if container.start_time:
+                elapsed = int(time.time() - container.start_time)
+                if elapsed < 60:
+                    stats["uptime"] = f"{elapsed}s"
+                elif elapsed < 3600:
+                    stats["uptime"] = f"{elapsed//60}m {elapsed%60}s"
+                else:
+                    stats["uptime"] = f"{elapsed//3600}h {(elapsed%3600)//60}m"
+        except:
+            pass
+    
+    return jsonify(stats)
+
+@app.route('/api/containers/<name>/export', methods=['GET'])
+def export_container(name):
+    """Export container configuration"""
+    from urllib.parse import unquote
+    name = unquote(name)
+    
+    meta = manager.get_container_by_name(name)
+    if not meta:
+        return jsonify({"error": "Container not found"}), 404
+    
+    # Create export data
+    export_data = {
+        "name": meta.get("name"),
+        "command": meta.get("command"),
+        "mem_limit_mb": meta.get("mem_limit_mb", meta.get("mem_limit", 100)),
+        "cpu_limit_percent": meta.get("cpu_limit_percent", meta.get("cpu_limit", 50)),
+        "volumes": meta.get("volumes", []),
+        "env_vars": meta.get("env_vars", {}),
+        "ports": meta.get("ports", []),
+        "restart_policy": meta.get("restart_policy", "no"),
+        "health_check": meta.get("health_check"),
+        "exported_at": time.strftime('%Y-%m-%d %H:%M:%S')
+    }
+    
+    return jsonify(export_data)
+
+@app.route('/api/containers/<name>/exec', methods=['POST'])
+def exec_command(name):
+    """Execute command in running container"""
+    from urllib.parse import unquote
+    name = unquote(name)
+    
+    if name not in containers:
+        return jsonify({"error": "Container not found"}), 404
+    
+    container = containers[name]
+    data = request.get_json()
+    command = data.get('command', '')
+    
+    if not command:
+        return jsonify({"error": "Command is required"}), 400
+    
+    if container.status != "Running":
+        return jsonify({"error": "Container must be running to execute commands"}), 400
+    
+    result = container.exec(command)
+    if result:
+        return jsonify({
+            "success": True,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "returncode": result.returncode
+        })
+    else:
+        return jsonify({"error": "Failed to execute command"}), 500
+
+@app.route('/api/templates', methods=['GET'])
+def get_templates():
+    """Get container templates"""
+    templates = [
+        {
+            "name": "Python Web Server",
+            "command": "python -m http.server 8000",
+            "mem_limit_mb": 100,
+            "cpu_limit_percent": 50,
+            "description": "Simple Python HTTP server"
+        },
+        {
+            "name": "Data Processor",
+            "command": "python -c \"import time; [print(f'Processing {i}') or time.sleep(1) for i in range(10)]\"",
+            "mem_limit_mb": 150,
+            "cpu_limit_percent": 75,
+            "description": "Example data processing script"
+        },
+        {
+            "name": "File Watcher",
+            "command": "python -c \"import os, time; print('Watching files...'); time.sleep(60)\"",
+            "mem_limit_mb": 50,
+            "cpu_limit_percent": 25,
+            "description": "Simple file watcher example"
+        }
+    ]
+    return jsonify(templates)
+
+@app.route('/api/templates', methods=['POST'])
+def save_template():
+    """Save a container template"""
+    data = request.get_json()
+    template_name = data.get('name')
+    
+    if not template_name:
+        return jsonify({"error": "Template name is required"}), 400
+    
+    template_config = {
+        "command": data.get('command', ''),
+        "mem_limit_mb": data.get('mem_limit_mb', 100),
+        "cpu_limit_percent": data.get('cpu_limit_percent', 50),
+        "volumes": data.get('volumes', []),
+        "env_vars": data.get('env_vars', {}),
+        "ports": data.get('ports', []),
+        "restart_policy": data.get('restart_policy', 'no'),
+        "description": data.get('description', '')
+    }
+    
+    manager.save_template(template_name, template_config)
+    return jsonify({"success": True, "message": f"Template '{template_name}' saved"})
+
+@app.route('/api/templates/<name>', methods=['DELETE'])
+def delete_template(name):
+    """Delete a template"""
+    if manager.delete_template(name):
+        return jsonify({"success": True})
+    return jsonify({"error": "Template not found"}), 404
+
+@app.route('/api/templates/saved', methods=['GET'])
+def get_saved_templates():
+    """Get all saved templates"""
+    templates = manager.get_templates()
+    return jsonify(templates)
+
+@app.route('/api/containers/import', methods=['POST'])
+def import_container():
+    """Import container from exported configuration"""
+    data = request.get_json()
+    
+    name = data.get('name')
+    if not name:
+        return jsonify({"error": "Container name is required"}), 400
+    
+    # Check if container already exists
+    if manager.get_container_by_name(name):
+        return jsonify({"error": f"Container '{name}' already exists"}), 400
+    
+    # Create container from imported config
+    try:
+        container_id = manager.create_container(
+            name=name,
+            command=data.get('command', ''),
+            mem_limit=data.get('mem_limit_mb', 100),
+            cpu_limit=data.get('cpu_limit_percent', 50),
+            volumes=data.get('volumes', []),
+            env_vars=data.get('env_vars', {})
+        )
+        
+        # Create rootfs
+        rootfs_path = fs.create_rootfs(name, image_name=None)
+        
+        # Create container object
+        container = SimulatedContainer(
+            container_id=container_id,
+            name=name,
+            command=data.get('command', ''),
+            rootfs_path=rootfs_path,
+            mem_limit_mb=data.get('mem_limit_mb', 100),
+            cpu_limit_percent=data.get('cpu_limit_percent', 50),
+            volumes=data.get('volumes', []),
+            env_vars=data.get('env_vars', {}),
+            ports=data.get('ports', []),
+            restart_policy=data.get('restart_policy', 'no'),
+            ui_callback=lambda n, m, s=None: socketio.emit('log_update', {'name': n, 'message': m, 'status': s})
+        )
+        
+        containers[name] = container
+        socketio.emit('container_created', {'name': name})
+        
+        return jsonify({"success": True, "container_id": container_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def load_existing_containers():
     """Load existing containers on startup"""
     all_containers_meta = manager.list_containers(all_containers=True)

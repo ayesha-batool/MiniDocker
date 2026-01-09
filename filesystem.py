@@ -49,7 +49,7 @@ class FileSystemManager:
                 self._create_minimal_rootfs(rootfs_path)
         else:
             # Create minimal rootfs structure
-            os.makedirs(rootfs_path, exist_ok=True)
+        os.makedirs(rootfs_path, exist_ok=True)
             self._create_minimal_rootfs(rootfs_path)
         
         return rootfs_path
@@ -180,7 +180,7 @@ class FileSystemManager:
             raise ValueError(f"Unsupported image format: {source_path}")
         
         return image_dest
-    
+
     def list_images(self):
         """List all available images."""
         images = []

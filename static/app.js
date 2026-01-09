@@ -306,18 +306,22 @@ function showContainerMenu(event, name) {
     menu.style.position = 'fixed';
     menu.style.left = event.clientX + 'px';
     menu.style.top = event.clientY + 'px';
+    const container = containers.find(c => c.name === name);
+    const isRunning = container && container.status === 'Running';
+    
     menu.innerHTML = `
-        <div class="menu-item" onclick="containerAction('${name}', 'start'); this.closest('.context-menu').remove();">▶️ Start</div>
-        <div class="menu-item" onclick="containerAction('${name}', 'stop'); this.closest('.context-menu').remove();">⏹️ Stop</div>
-        <div class="menu-item" onclick="containerAction('${name}', 'pause'); this.closest('.context-menu').remove();">⏸️ Pause</div>
-        <div class="menu-item" onclick="containerAction('${name}', 'resume'); this.closest('.context-menu').remove();">▶️ Resume</div>
-        <div class="menu-item" onclick="containerAction('${name}', 'restart'); this.closest('.context-menu').remove();">🔄 Restart</div>
+        <div class="menu-item" onclick="containerAction('${name}', 'start'); this.closest('.context-menu').remove();">Start</div>
+        <div class="menu-item" onclick="containerAction('${name}', 'stop'); this.closest('.context-menu').remove();">Stop</div>
+        <div class="menu-item" onclick="containerAction('${name}', 'pause'); this.closest('.context-menu').remove();">Pause</div>
+        <div class="menu-item" onclick="containerAction('${name}', 'resume'); this.closest('.context-menu').remove();">Resume</div>
+        <div class="menu-item" onclick="containerAction('${name}', 'restart'); this.closest('.context-menu').remove();">Restart</div>
         <div class="menu-divider"></div>
-        <div class="menu-item" onclick="
-            viewLogs('${name}');
-            this.closest('.context-menu').remove();
-        ">📄 View Logs</div>
-        <div class="menu-item" onclick="deleteContainer('${name}'); this.closest('.context-menu').remove();">🗑️ Delete</div>
+        <div class="menu-item" onclick="viewLogs('${name}'); this.closest('.context-menu').remove();">View Logs</div>
+        <div class="menu-item" onclick="viewStats('${name}'); this.closest('.context-menu').remove();">View Stats</div>
+        <div class="menu-item" onclick="exportContainer('${name}'); this.closest('.context-menu').remove();">Export Config</div>
+        ${isRunning ? `<div class="menu-item" onclick="execCommand('${name}'); this.closest('.context-menu').remove();">Exec Command</div>` : ''}
+        <div class="menu-divider"></div>
+        <div class="menu-item" onclick="deleteContainer('${name}'); this.closest('.context-menu').remove();">Delete</div>
     `;
     
     document.body.appendChild(menu);

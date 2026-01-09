@@ -108,5 +108,52 @@ class ContainerManager:
         if container:
             return container.get("log_file", f"./containers/{container['name']}/container.log")
         return None
+    
+    def save_template(self, name: str, config: Dict):
+        """Save a container template"""
+        templates_file = os.path.join(self.storage_dir, "templates.json")
+        templates = {}
+        if os.path.exists(templates_file):
+            try:
+                with open(templates_file, 'r') as f:
+                    templates = json.load(f)
+            except:
+                templates = {}
+        
+        templates[name] = {
+            **config,
+            "saved_at": datetime.now().isoformat()
+        }
+        
+        with open(templates_file, 'w') as f:
+            json.dump(templates, f, indent=2)
+        return True
+    
+    def get_templates(self) -> Dict:
+        """Get all saved templates"""
+        templates_file = os.path.join(self.storage_dir, "templates.json")
+        if os.path.exists(templates_file):
+            try:
+                with open(templates_file, 'r') as f:
+                    return json.load(f)
+            except:
+                return {}
+        return {}
+    
+    def delete_template(self, name: str) -> bool:
+        """Delete a template"""
+        templates_file = os.path.join(self.storage_dir, "templates.json")
+        if os.path.exists(templates_file):
+            try:
+                with open(templates_file, 'r') as f:
+                    templates = json.load(f)
+                if name in templates:
+                    del templates[name]
+                    with open(templates_file, 'w') as f:
+                        json.dump(templates, f, indent=2)
+                    return True
+            except:
+                pass
+        return False
 
 

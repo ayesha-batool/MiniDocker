@@ -303,7 +303,7 @@ class SimulatedContainer:
             if self.is_linux:
                 threading.Thread(target=self._monitor_resource_violations, daemon=True).start()
             threading.Thread(target=self._monitor_logs, args=(log_fd,), daemon=True).start()
-            self.status = "Running"
+        self.status = "Running"
             self.start_time = time.time()
             self._record_lifecycle_event("started")
             self._notify(f"Container started with PID: {self.process.pid}", status="Running")
@@ -319,7 +319,7 @@ class SimulatedContainer:
                 pass
             
             # Start monitoring threads
-            threading.Thread(target=self._monitor_resources, daemon=True).start()
+        threading.Thread(target=self._monitor_resources, daemon=True).start()
             threading.Thread(target=self._monitor_process, daemon=True).start()
             
             # Start health check if configured
@@ -386,14 +386,14 @@ class SimulatedContainer:
                     if self.is_linux:
                         os.kill(self.process.pid, 15)
                     else:
-                        self.process.terminate()
-                    try:
-                        self.process.wait(timeout=3)
-                    except subprocess.TimeoutExpired:
+            self.process.terminate()
+            try:
+                self.process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
                         if self.is_linux:
                             os.kill(self.process.pid, 9)
                         else:
-                            self.process.kill()
+                self.process.kill()
                         self.process.wait()
                     self._notify("Container stopped.")
                     
@@ -437,8 +437,8 @@ class SimulatedContainer:
                         self._record_lifecycle_event("paused")
                         self._notify("Container paused.")
                 else:
-                    psutil.Process(self.process.pid).suspend()
-                    self.status = "Paused"
+                psutil.Process(self.process.pid).suspend()
+                self.status = "Paused"
                     self._record_lifecycle_event("paused")
                     self._notify("Container paused.")
             except psutil.NoSuchProcess:
@@ -469,8 +469,8 @@ class SimulatedContainer:
                         self._record_lifecycle_event("resumed")
                         self._notify("Container resumed.")
                 else:
-                    psutil.Process(self.process.pid).resume()
-                    self.status = "Running"
+                psutil.Process(self.process.pid).resume()
+                self.status = "Running"
                     self._record_lifecycle_event("resumed")
                     self._notify("Container resumed.")
             except psutil.NoSuchProcess:
