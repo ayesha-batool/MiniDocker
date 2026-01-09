@@ -262,16 +262,30 @@ def restart_container(name):
 @app.route('/api/containers/<name>', methods=['DELETE'])
 def delete_container(name):
     """Delete a container"""
-    if name not in containers:
-        return jsonify({"error": "Container not found"}), 404
+    # Decode URL-encoded container name
+    from urllib.parse import unquote
+    name = unquote(name)
     
-    container = containers[name]
-    container.stop()
-    meta = manager.get_container_by_name(name)
-    if meta:
-        manager.remove_container(meta["id"])
-    fs.delete_rootfs(name)
-    del containers[name]
+    # Stop container if it's running
+    if name in containers:
+        container = containers[name]
+        container.stop()
+        del containers[name]
+    
+    # Remove from JSON metadata (by name - more reliable)
+    removed = manager.remove_container_by_name(name)
+    if not removed:
+        # Try to find and remove by ID if name lookup failed
+        meta = manager.get_container_by_name(name)
+        if meta:
+            manager.remove_container(meta["id"])
+    
+    # Delete container filesystem
+    try:
+        fs.delete_rootfs(name)
+    except Exception as e:
+        print(f"Warning: Could not delete rootfs for {name}: {e}")
+    
     socketio.emit('container_deleted', {'name': name})
     return jsonify({"success": True})
 

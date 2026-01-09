@@ -87,11 +87,19 @@ class ContainerManager:
             return [c for c in self.containers.values() if c.get("status") == "Running"]
     
     def remove_container(self, container_id: str) -> bool:
-        """Remove container from metadata"""
+        """Remove container from metadata by ID"""
         if container_id in self.containers:
             del self.containers[container_id]
             self._save_containers()
             return True
+        return False
+    
+    def remove_container_by_name(self, name: str) -> bool:
+        """Remove container from metadata by name"""
+        container = self.get_container_by_name(name)
+        if container:
+            container_id = container["id"]
+            return self.remove_container(container_id)
         return False
     
     def get_log_path(self, container_id: str) -> str:
