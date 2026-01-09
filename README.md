@@ -194,27 +194,257 @@ Let's say you want to process files from your computer:
 
 ### 2. Use Environment Variables
 
-Environment variables are like settings for your container:
+Environment variables are like settings or configuration that your program can read. Think of them as notes you pass to your program.
+
+#### What are Environment Variables?
+
+Environment variables are key-value pairs (like `KEY=VALUE`) that your program can access. They're useful for:
+- **Configuration**: Change how your program behaves without changing code
+- **Secrets**: Store passwords or API keys (though Mini Docker is for learning, not production)
+- **Settings**: Pass different settings for different environments
+
+#### How to Add Environment Variables:
 
 1. Click **"⚙️ Advanced Options"** when creating a container
-2. Add environment variables like: `MODE=production` or `DEBUG=true`
-3. Your program can read these using: `os.environ.get('MODE')`
+2. Click **"+ Add Variable"**
+3. Enter in format: `KEY=VALUE`
+   - Example: `MODE=production`
+   - Example: `DEBUG=true`
+   - Example: `PORT=8080`
+
+#### How to Use in Your Code:
+
+**In Python:**
+```python
+import os
+
+# Get an environment variable
+mode = os.environ.get('MODE')  # Returns 'production' if MODE=production
+port = os.environ.get('PORT', '8000')  # Returns '8000' if PORT not set
+
+# Use it in your program
+if mode == 'production':
+    print('Running in production mode')
+```
 
 **Important:** Always use quotes around the variable name in Python:
-- ✅ Correct: `os.environ.get('MODE')`
-- ❌ Wrong: `os.environ.get(MODE)`  ← This will cause an error!
+- ✅ Correct: `os.environ.get('MODE')` or `os.environ.get("MODE")`
+- ❌ Wrong: `os.environ.get(MODE)`  ← This will cause a NameError!
+
+#### Common Examples:
+
+**Example 1: Application Mode**
+- Variable: `MODE=production`
+- Code: `os.environ.get('MODE')` → Returns `'production'`
+
+**Example 2: Debug Flag**
+- Variable: `DEBUG=true`
+- Code: `os.environ.get('DEBUG')` → Returns `'true'`
+
+**Example 3: Port Number**
+- Variable: `PORT=8080`
+- Code: `int(os.environ.get('PORT', '8000'))` → Returns `8080`
+
+**Example 4: Database URL**
+- Variable: `DATABASE_URL=localhost:5432`
+- Code: `os.environ.get('DATABASE_URL')` → Returns `'localhost:5432'`
+
+#### Multiple Environment Variables:
+
+You can add as many as you need:
+```
+MODE=production
+DEBUG=false
+PORT=8080
+API_KEY=abc123
+```
+
+Your program can read all of them:
+```python
+import os
+mode = os.environ.get('MODE')
+debug = os.environ.get('DEBUG')
+port = os.environ.get('PORT')
+api_key = os.environ.get('API_KEY')
+```
 
 ### 3. Set Resource Limits
 
-**Memory Limit:**
-- Controls how much RAM the container can use
-- Typical values: 50-1000 MB
-- Example: 100 MB for a simple script, 512 MB for a web server
+Resource limits control how much of your computer's resources (memory and CPU) each container can use. This prevents one container from using all your computer's power.
 
-**CPU Limit:**
-- Controls how much processing power the container can use
-- Expressed as a percentage (25%, 50%, 75%, 100%)
-- Example: 50% means the container can use half of one CPU core
+#### Memory Limit (RAM)
+
+**What it does:**
+- Controls how much RAM (memory) the container can use
+- If the container tries to use more, it will be stopped
+- Measured in Megabytes (MB)
+
+**How to choose:**
+- **Small scripts** (simple Python commands): 50-100 MB
+- **Web servers**: 100-512 MB
+- **Data processing**: 256-1024 MB
+- **Heavy applications**: 512-2048 MB
+
+**Example:**
+- Set to 100 MB for a simple script
+- Set to 512 MB for a web server
+- Set to 1024 MB (1 GB) for heavy processing
+
+**What happens if limit is exceeded?**
+- The container will be stopped automatically
+- You'll see an error in the logs
+- The container status will show "Stopped"
+
+#### CPU Limit
+
+**What it does:**
+- Controls how much processing power (CPU) the container can use
+- Expressed as a percentage
+- Prevents one container from slowing down your computer
+
+**Understanding percentages:**
+- **25%**: Quarter of one CPU core (good for background tasks)
+- **50%**: Half of one CPU core (normal for most programs)
+- **75%**: Three-quarters of one CPU core (for heavy tasks)
+- **100%**: Full use of one CPU core (maximum for single core)
+- **200%**: Full use of two CPU cores (if you have multiple cores)
+
+**How to choose:**
+- **Background tasks**: 25-50%
+- **Normal programs**: 50-75%
+- **Heavy computations**: 75-100%
+- **Very intensive tasks**: 100-200% (if you have multiple CPU cores)
+
+**Example:**
+- Set to 25% for a simple script
+- Set to 50% for a web server
+- Set to 100% for video processing
+
+**What happens if limit is exceeded?**
+- The container's tasks will run slower (throttled)
+- Your computer stays responsive
+- The container doesn't stop, just runs slower
+
+#### Tips for Setting Limits:
+
+✅ **Do this:**
+- Start with lower limits and increase if needed
+- Check your computer's available resources first
+- Leave some resources for your operating system
+- Monitor container usage in the dashboard
+
+❌ **Don't do this:**
+- Don't set limits higher than your computer has
+- Don't allocate all resources to one container
+- Don't forget that your OS needs resources too
+
+---
+
+## 📊 Understanding Container States
+
+Containers can be in different states. Understanding these helps you manage them better:
+
+### Container States:
+
+1. **Created** 🆕
+   - Container is created but not started yet
+   - No program is running
+   - Ready to be started
+
+2. **Running** ▶️
+   - Container is active and running your program
+   - Program is executing
+   - Using resources (memory/CPU)
+
+3. **Stopped** ⏹️
+   - Container was running but is now stopped
+   - Program has finished or was stopped
+   - Not using any resources
+   - Data is still saved
+
+4. **Paused** ⏸️
+   - Container is frozen (temporarily stopped)
+   - Program is paused but not terminated
+   - Can be resumed exactly where it was
+   - Still using some memory
+
+5. **Error** ❌
+   - Something went wrong
+   - Check logs to see what happened
+   - May need to fix the command or settings
+
+### What Happens When:
+
+**Container finishes its command:**
+- State changes from "Running" to "Stopped"
+- This is normal! The program completed successfully
+
+**You stop a container:**
+- State changes from "Running" to "Stopped"
+- Program is terminated
+- All data is saved
+
+**You pause a container:**
+- State changes from "Running" to "Paused"
+- Program is frozen but not killed
+- Can resume later
+
+**Container runs out of memory:**
+- State changes to "Stopped" or "Error"
+- Check logs to see the error
+- Increase memory limit if needed
+
+---
+
+## 📄 Working with Logs
+
+Logs show you everything your container printed or any errors that occurred.
+
+### How to View Logs:
+
+1. **In the Dashboard:**
+   - Click on your container
+   - Click **"📄 View Logs"** button
+   - A window will show all the logs
+
+2. **What You'll See:**
+   - All output from your program
+   - Error messages (if any)
+   - Timestamps
+   - Container information
+
+### Understanding Logs:
+
+**Normal Output:**
+```
+=== Container abc123 started at 2026-01-06 12:00:00 ===
+Command: python -c "print('Hello')"
+Hello
+=== Container exited with code 0 ===
+```
+
+**Error Output:**
+```
+=== Container abc123 started at 2026-01-06 12:00:00 ===
+Command: python -c "print('Hello')"
+Traceback (most recent call last):
+  File "<string>", line 1
+    print('Hello')
+    ^
+SyntaxError: invalid syntax
+=== Container exited with code 1 ===
+```
+
+**Exit Codes:**
+- **0**: Success (program completed normally)
+- **1 or higher**: Error (something went wrong)
+
+### Tips for Logs:
+
+- **Check logs when container stops unexpectedly** - They show why
+- **Logs are saved** - Even after container stops, logs remain
+- **Large outputs** - If your program prints a lot, logs can get long
+- **Clear logs** - Delete and recreate container to clear logs
 
 ---
 
@@ -269,6 +499,220 @@ This will print "Mode: production" because we set the MODE variable.
 - Open `C:\MyData` folder on your computer
 - You should see `hello.txt` with the content "Hello from container!"
 
+### Example 5: Processing Files with Volume Mount
+
+**Container Name:** `file-processor`  
+**Command:** `python -c "import os; files = [f for f in os.listdir('/app/input') if f.endswith('.txt')]; print(f'Found {len(files)} text files'); [open(f'/app/output/{f}', 'w').write(f'Processed: {f}') for f in files]"`  
+**Memory:** 200 MB  
+**CPU:** 50%  
+**Volume Mounts:** 
+- `C:\InputFiles:/app/input`
+- `C:\OutputFiles:/app/output`
+
+**What this does:**
+- Reads all `.txt` files from `C:\InputFiles`
+- Processes them
+- Saves results to `C:\OutputFiles`
+
+### Example 6: Web Server with Custom Port
+
+**Container Name:** `my-webserver`  
+**Command:** `python -c "import os, http.server, socketserver; port = int(os.environ.get('PORT', 8000)); httpd = socketserver.TCPServer(('', port), http.server.SimpleHTTPRequestHandler); print(f'Server running on port {port}'); httpd.serve_forever()"`  
+**Memory:** 100 MB  
+**CPU:** 50%  
+**Environment Variables:** `PORT=9000`
+
+This starts a web server on port 9000 (instead of default 8000).
+
+### Example 7: Data Analysis with Environment Variables
+
+**Container Name:** `data-analyzer`  
+**Command:** `python -c "import os; mode = os.environ.get('MODE', 'normal'); limit = int(os.environ.get('LIMIT', '10')); print(f'Mode: {mode}, Processing {limit} items')"`  
+**Memory:** 150 MB  
+**CPU:** 75%  
+**Environment Variables:** 
+- `MODE=fast`
+- `LIMIT=100`
+
+This shows how to use multiple environment variables together.
+
+---
+
+## 🎨 Understanding the Dashboard
+
+The Mini Docker dashboard is your control center for managing containers. Here's what everything means:
+
+### Main Sections:
+
+1. **Container List Tab** 📋
+   - Shows all your containers
+   - See their status, resources, and information
+   - Select containers to manage them
+
+2. **Create Container Tab** ➕
+   - Form to create new containers
+   - Fill in name, command, and limits
+   - Advanced options for volumes and environment variables
+
+### Container Information Displayed:
+
+- **Container ID**: Unique identifier (first 12 characters shown)
+- **Name**: The name you gave it
+- **Status**: Current state (Running, Stopped, Paused, etc.)
+- **Command**: What the container runs
+- **Resources**: Memory and CPU limits
+- **CPU %**: Current CPU usage (if running)
+- **Uptime**: How long it's been running
+- **Last Started**: When it was last started
+
+### Action Buttons:
+
+- **▶️ Start**: Makes a stopped container run
+- **⏹️ Stop**: Stops a running container
+- **⏸️ Pause**: Freezes a running container
+- **▶️ Resume**: Unfreezes a paused container
+- **🔄 Restart**: Stops and starts again
+- **📄 View Logs**: Shows all output and errors
+- **🗑️ Delete**: Permanently removes container
+
+### Tips for Using Dashboard:
+
+- **Select multiple containers** - Click checkboxes to select several at once
+- **Real-time updates** - Status updates automatically every few seconds
+- **Color coding** - Different colors show different states
+- **Context menu** - Right-click (or long-press) for quick actions
+
+---
+
+## ⚠️ Common Mistakes and How to Avoid Them
+
+### Mistake 1: Forgetting Quotes in Python Commands
+
+**Wrong:**
+```
+python -c "print(os.environ.get(MODE))"
+```
+
+**Right:**
+```
+python -c "print(os.environ.get('MODE'))"
+```
+
+**Why:** Python needs quotes around string literals. Without quotes, Python thinks `MODE` is a variable name, not a string.
+
+### Mistake 2: Using Relative Paths for Volumes
+
+**Wrong:**
+```
+./data:/app/data
+```
+
+**Right:**
+```
+C:\MyData:/app/data
+```
+
+**Why:** Use full absolute paths. Relative paths can cause confusion about where files actually are.
+
+### Mistake 3: Setting Resource Limits Too High
+
+**Wrong:**
+- Memory: 10000 MB (on a computer with only 8 GB RAM)
+- CPU: 500% (on a computer with only 4 cores)
+
+**Right:**
+- Memory: 100-1000 MB (depending on your computer)
+- CPU: 25-200% (depending on your CPU cores)
+
+**Why:** Setting limits higher than your computer has can cause problems or prevent the container from starting.
+
+### Mistake 4: Not Creating Volume Folders First
+
+**Wrong:**
+- Adding volume `C:\NewFolder:/app/data` without creating `C:\NewFolder` first
+
+**Right:**
+- Create `C:\NewFolder` on your computer first
+- Then add it as a volume
+
+**Why:** The folder needs to exist before the container can use it.
+
+### Mistake 5: Expecting Container to Keep Running
+
+**Wrong:**
+- Running `python -c "print('Hello')"` and expecting it to stay running
+
+**Right:**
+- For long-running programs, use commands that don't exit immediately
+- Example: `python -m http.server 8000` (keeps running)
+
+**Why:** Containers stop when their command finishes. Simple print commands finish immediately.
+
+### Mistake 6: Not Checking Logs When Something Fails
+
+**Wrong:**
+- Container shows "Error" but you don't check logs
+
+**Right:**
+- Always click "View Logs" when something goes wrong
+- Logs show exactly what went wrong
+
+**Why:** Logs contain error messages that tell you what to fix.
+
+---
+
+## 💡 Best Practices
+
+### 1. Naming Containers
+
+✅ **Good names:**
+- `my-web-server`
+- `data-processor`
+- `test-container-1`
+
+❌ **Bad names:**
+- `container` (too generic)
+- `test` (not descriptive)
+- `abc123` (not meaningful)
+
+**Tip:** Use descriptive names that tell you what the container does.
+
+### 2. Resource Management
+
+✅ **Do:**
+- Start with lower limits and increase if needed
+- Monitor resource usage in dashboard
+- Stop containers you're not using
+
+❌ **Don't:**
+- Set limits too high
+- Leave many containers running unnecessarily
+- Ignore resource warnings
+
+### 3. Organizing Files
+
+✅ **Do:**
+- Use volume mounts for important data
+- Organize volume folders logically
+- Keep container commands simple
+
+❌ **Don't:**
+- Store important data only in containers (use volumes)
+- Create containers with very long commands (use scripts instead)
+- Mix different purposes in one container
+
+### 4. Testing and Debugging
+
+✅ **Do:**
+- Test commands in a simple container first
+- Check logs regularly
+- Start with simple examples
+
+❌ **Don't:**
+- Create complex containers without testing
+- Ignore error messages
+- Skip reading logs when things fail
+
 ---
 
 ## ❓ Frequently Asked Questions
@@ -300,6 +744,33 @@ A: Yes! Use volume mounts. Files in the mounted folder are accessible inside the
 **Q: What happens to files in volume mounts when I delete the container?**  
 A: Files in volume-mounted folders stay on your computer. Only files created inside the container (not in mounted folders) are deleted.
 
+**Q: Why did my container stop immediately?**  
+A: Your command probably finished executing. Commands like `print('Hello')` finish quickly. Use commands that keep running (like web servers) if you want the container to stay active.
+
+**Q: Can I change container settings after creating it?**  
+A: No, you need to delete and recreate the container with new settings. Containers are immutable (can't be changed after creation).
+
+**Q: How do I know if my container is using too much memory?**  
+A: Check the CPU % in the dashboard. If it's consistently high, your container might be working hard. Check logs for memory-related errors.
+
+**Q: Can I run the same container multiple times?**  
+A: No, each container name must be unique. But you can create multiple containers with the same command but different names.
+
+**Q: What's the difference between Pause and Stop?**  
+A: Pause freezes the container temporarily (can resume exactly where it was). Stop terminates the program completely (starts fresh when restarted).
+
+**Q: How do I see what resources my container is using?**  
+A: Look at the dashboard - it shows CPU % and you can see memory usage in the logs. The dashboard updates in real-time.
+
+**Q: Can I use Mini Docker on a Mac?**  
+A: Yes, but it runs in simulation mode (like Windows). Full features work best on Linux.
+
+**Q: What if my container command has errors?**  
+A: Check the logs! They show the exact error message. Fix the command and recreate the container.
+
+**Q: How many containers can I run at once?**  
+A: As many as your computer can handle! Just make sure you don't exceed your total memory and CPU.
+
 ---
 
 ## 🛠️ Requirements
@@ -328,21 +799,181 @@ Mini Docker/
 
 ## 🎓 Learning Resources
 
-**What is a container?**
-- A container is like a lightweight virtual machine
-- It runs programs in isolation from your main computer
-- Each container has its own filesystem and environment
+### What is a Container?
 
-**Why use containers?**
-- **Isolation**: Programs can't interfere with each other
-- **Portability**: Same container works on different computers
-- **Resource Control**: Limit how much memory/CPU each container uses
+Think of a container like a **small, isolated room** for your program:
+- Your program runs inside this "room"
+- It can't see or affect other programs outside
+- It has its own "space" (filesystem)
+- You control how much "resources" (memory/CPU) it can use
 
-**Key Concepts:**
-- **Container**: An isolated environment running a program
-- **Image**: A template for creating containers
-- **Volume**: A way to share files between your computer and container
-- **Environment Variable**: A setting that your program can read
+**Real-world analogy:**
+- Your computer = A big apartment building
+- Container = One apartment in the building
+- Each apartment is separate and isolated
+- But they all share the building's infrastructure (electricity, water = your computer's resources)
+
+### Why Use Containers?
+
+1. **Isolation** 🔒
+   - Programs can't interfere with each other
+   - If one crashes, others keep running
+   - Security: programs can't access each other's data
+
+2. **Portability** 📦
+   - Same container works on different computers
+   - Easy to share and move between systems
+   - Consistent environment everywhere
+
+3. **Resource Control** ⚙️
+   - Limit how much memory/CPU each container uses
+   - Prevent one program from slowing down your computer
+   - Better resource management
+
+4. **Easy Management** 🎛️
+   - Start, stop, pause containers easily
+   - Delete containers when done
+   - Clean up is simple
+
+### Key Concepts Explained:
+
+**Container:**
+- An isolated environment running a program
+- Like a virtual box that holds your application
+- Has its own filesystem and settings
+
+**Image:**
+- A template for creating containers
+- Like a blueprint or recipe
+- In Mini Docker, we use a default image
+
+**Volume:**
+- A way to share files between your computer and container
+- Like a shared folder
+- Files persist even after container is deleted
+
+**Environment Variable:**
+- A setting or configuration value
+- Like a note you pass to your program
+- Your program can read these values
+
+**Resource Limits:**
+- Controls on how much memory/CPU a container can use
+- Like setting a budget
+- Prevents containers from using too much
+
+**Logs:**
+- All output and messages from your container
+- Like a diary of what happened
+- Shows errors and normal output
+
+---
+
+## 📚 Glossary
+
+**Container:** An isolated environment where your program runs
+
+**Dashboard:** The web interface for managing containers
+
+**Environment Variable:** A key-value pair that provides configuration to your program
+
+**Image:** A template used to create containers
+
+**Logs:** All output, messages, and errors from a container
+
+**Memory Limit:** Maximum amount of RAM a container can use
+
+**CPU Limit:** Maximum amount of processing power a container can use
+
+**Volume Mount:** A way to share folders between your computer and container
+
+**Rootfs:** The container's isolated filesystem (root file system)
+
+**Status:** Current state of a container (Running, Stopped, Paused, etc.)
+
+**PID:** Process ID - a unique number identifying a running process
+
+**Namespace:** A way to isolate different aspects of a container (processes, network, etc.)
+
+**cgroup:** Control group - a way to limit and monitor resource usage
+
+---
+
+## 💡 Tips and Tricks
+
+### Tip 1: Start Simple
+
+When learning, start with the simplest examples:
+1. First: `python -c "print('Hello')"`
+2. Then: Add environment variables
+3. Then: Add volume mounts
+4. Finally: Combine everything
+
+### Tip 2: Use Descriptive Names
+
+Good container names help you remember what they do:
+- ✅ `my-web-server` (clear purpose)
+- ✅ `data-processor-v1` (version included)
+- ❌ `test` (not descriptive)
+- ❌ `container1` (not meaningful)
+
+### Tip 3: Test Commands First
+
+Before putting a command in a container, test it in your terminal:
+```bash
+python -c "your command here"
+```
+
+If it works in terminal, it will work in container!
+
+### Tip 4: Check Logs Regularly
+
+Logs are your best friend:
+- They show what's happening
+- They show errors clearly
+- They help you debug problems
+
+### Tip 5: Use Volume Mounts for Important Data
+
+Don't store important data only in containers:
+- Containers can be deleted
+- Use volume mounts to save data on your computer
+- Data in volumes persists even after container deletion
+
+### Tip 6: Monitor Resource Usage
+
+Keep an eye on resource usage:
+- High CPU % = container is working hard
+- Check if limits are appropriate
+- Adjust limits based on actual usage
+
+### Tip 7: Clean Up Regularly
+
+Delete containers you're not using:
+- Frees up resources
+- Keeps dashboard clean
+- Prevents confusion
+
+### Tip 8: Read Error Messages
+
+When something fails:
+- Read the error message carefully
+- It usually tells you what's wrong
+- Fix the specific issue mentioned
+
+### Tip 9: Use Environment Variables for Configuration
+
+Instead of hardcoding values:
+- Use environment variables
+- Easy to change without editing code
+- Different values for different containers
+
+### Tip 10: Start with Lower Resource Limits
+
+Better to start low and increase:
+- Prevents resource exhaustion
+- Easier to identify problems
+- Can always increase if needed
 
 ---
 
@@ -355,14 +986,91 @@ Mini Docker/
 
 ---
 
-## 🤝 Need Help?
+## 🔧 Troubleshooting
 
-If you encounter any problems:
+### Problem: Container Won't Start
 
-1. **Check the logs** - Click "View Logs" to see error messages
-2. **Check resource limits** - Make sure you have enough memory/CPU available
-3. **Restart the server** - Stop `main.py` and start it again
-4. **Check Python version** - Make sure you have Python 3.7+
+**Possible causes:**
+1. **Command has syntax errors**
+   - **Solution:** Check the command syntax, especially quotes
+   - **Check:** View logs to see the exact error
+
+2. **Resource limits too high**
+   - **Solution:** Lower memory or CPU limits
+   - **Check:** Make sure limits are less than your computer's total resources
+
+3. **Volume folder doesn't exist**
+   - **Solution:** Create the folder on your computer first
+   - **Check:** Verify the folder path is correct
+
+### Problem: Container Stops Immediately
+
+**Possible causes:**
+1. **Command finished executing**
+   - **Solution:** This is normal! Your command completed successfully
+   - **Check:** View logs to see the output
+
+2. **Command has an error**
+   - **Solution:** Fix the command syntax or logic
+   - **Check:** View logs to see the error message
+
+### Problem: Can't See Files in Volume Mount
+
+**Possible causes:**
+1. **Wrong path in container**
+   - **Solution:** Make sure you're using the container path (right side of `:`)
+   - **Example:** If volume is `C:\Data:/app/data`, use `/app/data` in your command
+
+2. **Folder not created on computer**
+   - **Solution:** Create the folder on your computer first
+   - **Check:** Verify the folder exists before creating container
+
+### Problem: Environment Variable Not Working
+
+**Possible causes:**
+1. **Forgot quotes in Python**
+   - **Solution:** Always use quotes: `os.environ.get('MODE')` not `os.environ.get(MODE)`
+   - **Check:** Python syntax requires quotes around string literals
+
+2. **Variable name typo**
+   - **Solution:** Check spelling matches exactly (case-sensitive)
+   - **Check:** Variable name in code must match what you set
+
+### Problem: Dashboard Not Loading
+
+**Possible causes:**
+1. **Server not running**
+   - **Solution:** Make sure `python main.py` is running
+   - **Check:** Look for errors in the terminal
+
+2. **Port already in use**
+   - **Solution:** Close other programs using port 5000
+   - **Check:** Try a different port or restart your computer
+
+3. **Wrong URL**
+   - **Solution:** Use exactly `http://localhost:5000`
+   - **Check:** Make sure you're using `http://` not `https://`
+
+### Problem: Container Using Too Much Memory
+
+**Possible causes:**
+1. **Memory limit too high**
+   - **Solution:** Lower the memory limit
+   - **Check:** Start with 100 MB and increase if needed
+
+2. **Program needs more memory**
+   - **Solution:** Increase memory limit (if your computer has enough)
+   - **Check:** Make sure you have enough RAM available
+
+### Getting More Help:
+
+1. **Check the logs** - Always start here! Logs show what went wrong
+2. **Check resource limits** - Make sure they're reasonable
+3. **Restart the server** - Stop `main.py` (Ctrl+C) and start again
+4. **Check Python version** - Run `python --version` (need 3.7+)
+5. **Recreate container** - Sometimes deleting and recreating fixes issues
+6. **Check command syntax** - Make sure your command is correct
+7. **Test with simple example** - Try the "Hello World" example first
 
 ---
 
