@@ -1,4 +1,4 @@
-# 🐳 Mini Docker
+# Mini Docker
 
 > **A simple containerization tool for learning how containers work**
 
@@ -6,7 +6,7 @@ Mini Docker is a simplified version of Docker that helps you understand how cont
 
 ---
 
-## 🤔 What is Mini Docker?
+## What is Mini Docker?
 
 Think of Mini Docker as a **lightweight version of Docker** that's easier to understand. Just like Docker, it lets you:
 
@@ -19,7 +19,7 @@ Think of Mini Docker as a **lightweight version of Docker** that's easier to und
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Step 1: Install Python
 
@@ -60,19 +60,19 @@ You'll see a web interface where you can create and manage containers!
 
 ---
 
-## 📖 How to Use
+## How to Use
 
 ### Creating Your First Container
 
 1. **Open the dashboard** at http://localhost:5000
-2. Click on **"➕ Create Container"** tab
+2. Click on **"Create Container"** tab
 3. Fill in the details:
    - **Container Name**: Give it a name (e.g., "my-first-container")
    - **Command**: What to run (e.g., `python -c "print('Hello World!')"`)
    - **Memory Limit**: How much RAM to use (e.g., 100 MB)
    - **CPU Limit**: How much CPU to use (e.g., 50%)
 4. Click **"Create Container"**
-5. Select your container and click **"▶️ Start"**
+5. Select your container and click **"Start"**
 
 That's it! Your container is now running!
 
@@ -103,17 +103,17 @@ python -m http.server 8000
 
 ### Managing Containers
 
-- **▶️ Start**: Start a stopped container
-- **⏹️ Stop**: Stop a running container
-- **⏸️ Pause**: Pause a container (freeze it)
-- **▶️ Resume**: Resume a paused container
-- **🔄 Restart**: Restart a container
-- **📄 View Logs**: See what the container printed
-- **🗑️ Delete**: Delete a container (removes all its data)
+- **Start**: Start a stopped container
+- **Stop**: Stop a running container
+- **Pause**: Pause a container (freeze it)
+- **Resume**: Resume a paused container
+- **Restart**: Restart a container
+- **View Logs**: See what the container printed
+- **Delete**: Delete a container (removes all its data)
 
 ---
 
-## 💡 What Can You Do?
+## What Can You Do?
 
 ### 1. Share Files (Volume Mounts)
 
@@ -129,11 +129,11 @@ Volume mounts let you share folders between your computer and the container. Thi
 - You can put any files you want in this folder
 
 **Step 2: Create a container**
-- Go to the "➕ Create Container" tab
+- Go to the "Create Container" tab
 - Fill in the basic details (name, command, etc.)
 
 **Step 3: Add volume mount**
-- Click **"⚙️ Advanced Options"**
+- Click **"Advanced Options"**
 - Click **"+ Add Volume"**
 - Enter the volume in this format: `YourComputerPath:ContainerPath`
   - Example: `C:\MyData:/app/data`
@@ -169,12 +169,12 @@ You can add multiple volumes:
 
 #### Important Tips:
 
-✅ **Do this:**
+**Do this:**
 - Create the folder on your computer BEFORE creating the container
 - Use full paths: `C:\MyData` not `MyData`
 - Use forward slashes or backslashes: `C:\MyData` or `C:/MyData` both work
 
-❌ **Don't do this:**
+**Don't do this:**
 - Don't use relative paths like `./data` (use full paths)
 - Don't mount system folders like `C:\Windows` (can cause problems)
 - Don't forget the colon (`:`) between paths
@@ -205,7 +205,7 @@ Environment variables are key-value pairs (like `KEY=VALUE`) that your program c
 
 #### How to Add Environment Variables:
 
-1. Click **"⚙️ Advanced Options"** when creating a container
+1. Click **"Advanced Options"** when creating a container
 2. Click **"+ Add Variable"**
 3. Enter in format: `KEY=VALUE`
    - Example: `MODE=production`
@@ -228,8 +228,8 @@ if mode == 'production':
 ```
 
 **Important:** Always use quotes around the variable name in Python:
-- ✅ Correct: `os.environ.get('MODE')` or `os.environ.get("MODE")`
-- ❌ Wrong: `os.environ.get(MODE)`  ← This will cause a NameError!
+- Correct: `os.environ.get('MODE')` or `os.environ.get("MODE")`
+- Wrong: `os.environ.get(MODE)`  ← This will cause a NameError!
 
 #### Common Examples:
 
@@ -296,7 +296,7 @@ Resource limits control how much of your computer's resources (memory and CPU) e
 - The container status will show "Stopped"
 
 #### CPU Limit
-
+i
 **What it does:**
 - Controls how much processing power (CPU) the container can use
 - Expressed as a percentage
@@ -327,48 +327,48 @@ Resource limits control how much of your computer's resources (memory and CPU) e
 
 #### Tips for Setting Limits:
 
-✅ **Do this:**
+**Do this:**
 - Start with lower limits and increase if needed
 - Check your computer's available resources first
 - Leave some resources for your operating system
 - Monitor container usage in the dashboard
 
-❌ **Don't do this:**
+**Don't do this:**
 - Don't set limits higher than your computer has
 - Don't allocate all resources to one container
 - Don't forget that your OS needs resources too
 
 ---
 
-## 📊 Understanding Container States
+## Understanding Container States
 
 Containers can be in different states. Understanding these helps you manage them better:
 
 ### Container States:
 
-1. **Created** 🆕
+1. **Created**
    - Container is created but not started yet
    - No program is running
    - Ready to be started
 
-2. **Running** ▶️
+2. **Running**
    - Container is active and running your program
    - Program is executing
    - Using resources (memory/CPU)
 
-3. **Stopped** ⏹️
+3. **Stopped**
    - Container was running but is now stopped
    - Program has finished or was stopped
    - Not using any resources
    - Data is still saved
 
-4. **Paused** ⏸️
+4. **Paused**
    - Container is frozen (temporarily stopped)
    - Program is paused but not terminated
    - Can be resumed exactly where it was
    - Still using some memory
 
-5. **Error** ❌
+5. **Error**
    - Something went wrong
    - Check logs to see what happened
    - May need to fix the command or settings
@@ -396,7 +396,7 @@ Containers can be in different states. Understanding these helps you manage them
 
 ---
 
-## 📄 Working with Logs
+## Working with Logs
 
 Logs show you everything your container printed or any errors that occurred.
 
@@ -404,7 +404,7 @@ Logs show you everything your container printed or any errors that occurred.
 
 1. **In the Dashboard:**
    - Click on your container
-   - Click **"📄 View Logs"** button
+   - Click **"View Logs"** button
    - A window will show all the logs
 
 2. **What You'll See:**
@@ -448,7 +448,7 @@ SyntaxError: invalid syntax
 
 ---
 
-## 🎯 Common Examples
+## Common Examples
 
 ### Example 1: Simple Script
 
@@ -538,18 +538,18 @@ This shows how to use multiple environment variables together.
 
 ---
 
-## 🎨 Understanding the Dashboard
+## Understanding the Dashboard
 
 The Mini Docker dashboard is your control center for managing containers. Here's what everything means:
 
 ### Main Sections:
 
-1. **Container List Tab** 📋
+1. **Container List Tab**
    - Shows all your containers
    - See their status, resources, and information
    - Select containers to manage them
 
-2. **Create Container Tab** ➕
+2. **Create Container Tab**
    - Form to create new containers
    - Fill in name, command, and limits
    - Advanced options for volumes and environment variables
@@ -567,13 +567,13 @@ The Mini Docker dashboard is your control center for managing containers. Here's
 
 ### Action Buttons:
 
-- **▶️ Start**: Makes a stopped container run
-- **⏹️ Stop**: Stops a running container
-- **⏸️ Pause**: Freezes a running container
-- **▶️ Resume**: Unfreezes a paused container
-- **🔄 Restart**: Stops and starts again
-- **📄 View Logs**: Shows all output and errors
-- **🗑️ Delete**: Permanently removes container
+- **Start**: Makes a stopped container run
+- **Stop**: Stops a running container
+- **Pause**: Freezes a running container
+- **Resume**: Unfreezes a paused container
+- **Restart**: Stops and starts again
+- **View Logs**: Shows all output and errors
+- **Delete**: Permanently removes container
 
 ### Tips for Using Dashboard:
 
@@ -584,7 +584,7 @@ The Mini Docker dashboard is your control center for managing containers. Here's
 
 ---
 
-## ⚠️ Common Mistakes and How to Avoid Them
+## Common Mistakes and How to Avoid Them
 
 ### Mistake 1: Forgetting Quotes in Python Commands
 
@@ -661,16 +661,16 @@ C:\MyData:/app/data
 
 ---
 
-## 💡 Best Practices
+## Best Practices
 
 ### 1. Naming Containers
 
-✅ **Good names:**
+**Good names:**
 - `my-web-server`
 - `data-processor`
 - `test-container-1`
 
-❌ **Bad names:**
+**Bad names:**
 - `container` (too generic)
 - `test` (not descriptive)
 - `abc123` (not meaningful)
@@ -679,43 +679,43 @@ C:\MyData:/app/data
 
 ### 2. Resource Management
 
-✅ **Do:**
+**Do:**
 - Start with lower limits and increase if needed
 - Monitor resource usage in dashboard
 - Stop containers you're not using
 
-❌ **Don't:**
+**Don't:**
 - Set limits too high
 - Leave many containers running unnecessarily
 - Ignore resource warnings
 
 ### 3. Organizing Files
 
-✅ **Do:**
+**Do:**
 - Use volume mounts for important data
 - Organize volume folders logically
 - Keep container commands simple
 
-❌ **Don't:**
+**Don't:**
 - Store important data only in containers (use volumes)
 - Create containers with very long commands (use scripts instead)
 - Mix different purposes in one container
 
 ### 4. Testing and Debugging
 
-✅ **Do:**
+**Do:**
 - Test commands in a simple container first
 - Check logs regularly
 - Start with simple examples
 
-❌ **Don't:**
+**Don't:**
 - Create complex containers without testing
 - Ignore error messages
 - Skip reading logs when things fail
 
 ---
 
-## ❓ Frequently Asked Questions
+## Frequently Asked Questions
 
 **Q: What's the difference between Mini Docker and Docker?**  
 A: Mini Docker is simpler and designed for learning. Real Docker is more powerful but also more complex.
@@ -727,7 +727,7 @@ A: No, Mini Docker is for learning only. Use real Docker for actual projects.
 A: Containers stop when their command finishes. If you run a script that prints something and exits, the container will stop automatically.
 
 **Q: How do I see what my container printed?**  
-A: Click **"📄 View Logs"** on your container to see all its output.
+A: Click **"View Logs"** on your container to see all its output.
 
 **Q: Can I run multiple containers at once?**  
 A: Yes! You can create and run as many containers as you want.
@@ -773,7 +773,7 @@ A: As many as your computer can handle! Just make sure you don't exceed your tot
 
 ---
 
-## 🛠️ Requirements
+## Requirements
 
 - **Python 3.7 or higher**
 - **Windows, Linux, or Mac**
@@ -783,7 +783,7 @@ A: As many as your computer can handle! Just make sure you don't exceed your tot
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Mini Docker/
@@ -797,7 +797,7 @@ Mini Docker/
 
 ---
 
-## 🎓 Learning Resources
+## Learning Resources
 
 ### What is a Container?
 
@@ -815,22 +815,22 @@ Think of a container like a **small, isolated room** for your program:
 
 ### Why Use Containers?
 
-1. **Isolation** 🔒
+1. **Isolation**
    - Programs can't interfere with each other
    - If one crashes, others keep running
    - Security: programs can't access each other's data
 
-2. **Portability** 📦
+2. **Portability**
    - Same container works on different computers
    - Easy to share and move between systems
    - Consistent environment everywhere
 
-3. **Resource Control** ⚙️
+3. **Resource Control**
    - Limit how much memory/CPU each container uses
    - Prevent one program from slowing down your computer
    - Better resource management
 
-4. **Easy Management** 🎛️
+4. **Easy Management**
    - Start, stop, pause containers easily
    - Delete containers when done
    - Clean up is simple
@@ -869,7 +869,7 @@ Think of a container like a **small, isolated room** for your program:
 
 ---
 
-## 📚 Glossary
+## Glossary
 
 **Container:** An isolated environment where your program runs
 
@@ -899,7 +899,7 @@ Think of a container like a **small, isolated room** for your program:
 
 ---
 
-## 💡 Tips and Tricks
+## Tips and Tricks
 
 ### Tip 1: Start Simple
 
@@ -912,10 +912,10 @@ When learning, start with the simplest examples:
 ### Tip 2: Use Descriptive Names
 
 Good container names help you remember what they do:
-- ✅ `my-web-server` (clear purpose)
-- ✅ `data-processor-v1` (version included)
-- ❌ `test` (not descriptive)
-- ❌ `container1` (not meaningful)
+- `my-web-server` (clear purpose)
+- `data-processor-v1` (version included)
+- `test` (not descriptive)
+- `container1` (not meaningful)
 
 ### Tip 3: Test Commands First
 
@@ -977,7 +977,7 @@ Better to start low and increase:
 
 ---
 
-## ⚠️ Important Notes
+## Important Notes
 
 - **This is for learning only** - Don't use Mini Docker for real projects
 - **Containers are isolated** - Files created inside containers stay in containers
@@ -986,7 +986,7 @@ Better to start low and increase:
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Problem: Container Won't Start
 
@@ -1074,12 +1074,12 @@ Better to start low and increase:
 
 ---
 
-## 📝 License
+## License
 
 This is an educational project - feel free to use it for learning!
 
 ---
 
-**Happy Learning! 🎉**
+**Happy Learning!**
 
 *Remember: Mini Docker is designed to help you understand how containers work. Once you're comfortable with it, you can move on to learning real Docker!*
