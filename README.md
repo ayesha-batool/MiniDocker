@@ -117,17 +117,80 @@ python -m http.server 8000
 
 ### 1. Share Files (Volume Mounts)
 
-You can share folders between your computer and the container:
+Volume mounts let you share folders between your computer and the container. This means:
+- Files you create on your computer appear in the container
+- Files created in the container appear on your computer
+- Changes are saved permanently (even after container is deleted)
 
-1. Create a folder on your computer (e.g., `C:\MyData`)
-2. When creating a container, click **"⚙️ Advanced Options"**
-3. Add a volume: `C:\MyData:/app/data`
-4. Now files in `C:\MyData` are accessible in the container at `/app/data`
+#### Step-by-Step Guide:
 
-**Example:**
-- Host folder: `C:\MyData`
-- Container path: `/app/data`
-- Volume mount: `C:\MyData:/app/data`
+**Step 1: Create a folder on your computer**
+- Create a folder anywhere, for example: `C:\MyData` or `D:\Projects\MyApp`
+- You can put any files you want in this folder
+
+**Step 2: Create a container**
+- Go to the "➕ Create Container" tab
+- Fill in the basic details (name, command, etc.)
+
+**Step 3: Add volume mount**
+- Click **"⚙️ Advanced Options"**
+- Click **"+ Add Volume"**
+- Enter the volume in this format: `YourComputerPath:ContainerPath`
+  - Example: `C:\MyData:/app/data`
+  - Left side (`C:\MyData`) = folder on your computer
+  - Right side (`/app/data`) = where it appears inside the container
+
+**Step 4: Use the shared folder in your command**
+- In your container command, access files at the container path
+- Example: `python -c "with open('/app/data/output.txt', 'w') as f: f.write('Hello!')"`
+- This will create `output.txt` in your `C:\MyData` folder!
+
+#### Examples:
+
+**Example 1: Share a data folder**
+- **Your computer:** `C:\MyData`
+- **Container path:** `/app/data`
+- **Volume mount:** `C:\MyData:/app/data`
+- **Command:** `python -c "import os; print(os.listdir('/app/data'))"`
+- This lists all files in your `C:\MyData` folder!
+
+**Example 2: Share a project folder**
+- **Your computer:** `D:\MyProject`
+- **Container path:** `/app`
+- **Volume mount:** `D:\MyProject:/app`
+- **Command:** `python -c "with open('/app/result.txt', 'w') as f: f.write('Done!')"`
+- Creates `result.txt` in your `D:\MyProject` folder!
+
+**Example 3: Share multiple folders**
+You can add multiple volumes:
+- `C:\Data:/app/data`
+- `C:\Logs:/var/log`
+- `C:\Config:/etc/config`
+
+#### Important Tips:
+
+✅ **Do this:**
+- Create the folder on your computer BEFORE creating the container
+- Use full paths: `C:\MyData` not `MyData`
+- Use forward slashes or backslashes: `C:\MyData` or `C:/MyData` both work
+
+❌ **Don't do this:**
+- Don't use relative paths like `./data` (use full paths)
+- Don't mount system folders like `C:\Windows` (can cause problems)
+- Don't forget the colon (`:`) between paths
+
+#### Real-World Example:
+
+Let's say you want to process files from your computer:
+
+1. **Create folder:** `C:\Documents\ToProcess`
+2. **Put some files** in that folder (e.g., `file1.txt`, `file2.txt`)
+3. **Create container with:**
+   - Name: `file-processor`
+   - Command: `python -c "import os; files = os.listdir('/app/files'); print(f'Found {len(files)} files: {files}')"`
+   - Volume: `C:\Documents\ToProcess:/app/files`
+4. **Start the container**
+5. **Result:** The container will list all files from your `C:\Documents\ToProcess` folder!
 
 ### 2. Use Environment Variables
 
@@ -185,6 +248,27 @@ This starts a web server on port 8000. It will keep running until you stop it.
 
 This will print "Mode: production" because we set the MODE variable.
 
+### Example 4: Sharing Files with Volume Mount
+
+**Container Name:** `file-sharer`  
+**Command:** `python -c "with open('/app/data/hello.txt', 'w') as f: f.write('Hello from container!'); print('File created!')"`  
+**Memory:** 100 MB  
+**CPU:** 50%  
+**Volume Mount:** `C:\MyData:/app/data`
+
+**Before running:**
+1. Create folder `C:\MyData` on your computer
+2. The folder can be empty or have files in it
+
+**After running:**
+- The container creates `hello.txt` in `/app/data`
+- You'll find `hello.txt` in your `C:\MyData` folder on your computer!
+- The file persists even after you delete the container
+
+**To verify:**
+- Open `C:\MyData` folder on your computer
+- You should see `hello.txt` with the content "Hello from container!"
+
 ---
 
 ## ❓ Frequently Asked Questions
@@ -205,7 +289,16 @@ A: Click **"📄 View Logs"** on your container to see all its output.
 A: Yes! You can create and run as many containers as you want.
 
 **Q: What happens when I delete a container?**  
-A: All the container's data, files, and logs are permanently deleted.
+A: All the container's data, files, and logs are permanently deleted. However, files in volume-mounted folders are NOT deleted (they stay on your computer).
+
+**Q: How do I share files between my computer and container?**  
+A: Use volume mounts! Create a folder on your computer, then add it as a volume when creating the container. Format: `YourComputerPath:ContainerPath` (e.g., `C:\MyData:/app/data`).
+
+**Q: Can I access files from my computer inside the container?**  
+A: Yes! Use volume mounts. Files in the mounted folder are accessible inside the container at the path you specify.
+
+**Q: What happens to files in volume mounts when I delete the container?**  
+A: Files in volume-mounted folders stay on your computer. Only files created inside the container (not in mounted folders) are deleted.
 
 ---
 
